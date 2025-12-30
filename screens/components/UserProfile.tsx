@@ -1,14 +1,14 @@
+
 import React from 'react';
-import { Camera, LogOut, User, MapPin, School, Briefcase, Phone, Mail, ChevronRight } from 'lucide-react';
-import GlassCard from '../components/GlassCard';
-import { Screen } from '../types';
+import { Camera, LogOut, MapPin, School, Phone, Mail } from 'lucide-react';
+import GlassCard from './GlassCard';
+import { Screen } from '../../types';
 
 interface UserProfileProps {
   setScreen: (screen: Screen) => void;
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({ setScreen }) => {
-  // Mock user data matching the new registration fields
   const userData = {
     firstName: 'Babatunde',
     lastName: 'Ojo',
@@ -25,12 +25,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ setScreen }) => {
   return (
     <div className="flex flex-col h-full pt-6 pb-24 px-6 overflow-y-auto no-scrollbar">
        <div className="flex justify-between items-center mb-8">
-        <h2 className="font-black text-2xl tracking-tighter italic">MY PROFILE</h2>
+        <h2 className="font-black text-2xl tracking-tighter italic text-white">MY PROFILE</h2>
         <button className="text-[10px] font-black uppercase tracking-widest text-pink-400">Settings</button>
       </div>
 
-      {/* Profile Card */}
-      <GlassCard className="flex flex-col items-center p-8 mb-8 relative rounded-[3rem] shadow-2xl border-white/20">
+      <GlassCard className="flex flex-col items-center p-8 mb-8 relative rounded-[3rem] shadow-2xl border-white/20 text-white">
         <div className="relative mb-6">
             <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 p-1 shadow-2xl">
                 <img 
@@ -62,11 +61,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ setScreen }) => {
         </div>
       </GlassCard>
 
-      {/* Info List */}
       <div className="space-y-4">
         <h3 className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] pl-2">Identity Details</h3>
         
-        <GlassCard className="flex items-center gap-4 p-5 rounded-[2rem]">
+        <GlassCard className="flex items-center gap-4 p-5 rounded-[2rem] text-white">
             <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-white/40">
                 <Mail size={20} />
             </div>
@@ -76,7 +74,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ setScreen }) => {
             </div>
         </GlassCard>
 
-        <GlassCard className="flex items-center gap-4 p-5 rounded-[2rem]">
+        <GlassCard className="flex items-center gap-4 p-5 rounded-[2rem] text-white">
             <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-white/40">
                 <Phone size={20} />
             </div>
@@ -86,7 +84,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ setScreen }) => {
             </div>
         </GlassCard>
 
-        <GlassCard className="flex items-center gap-4 p-5 rounded-[2rem]">
+        <GlassCard className="flex items-center gap-4 p-5 rounded-[2rem] text-white">
             <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-white/40">
                 <School size={20} />
             </div>
@@ -96,7 +94,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ setScreen }) => {
             </div>
         </GlassCard>
 
-        <GlassCard className="flex items-center gap-4 p-5 rounded-[2rem]">
+        <GlassCard className="flex items-center gap-4 p-5 rounded-[2rem] text-white">
             <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-white/40">
                 <MapPin size={20} />
             </div>
