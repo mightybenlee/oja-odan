@@ -1,0 +1,7 @@
+{
+  "name": "Oja-odan",
+  "description": "A futuristic glassmorphism social app for the Oja-odan community with messaging, calling, and Gemini-powered AI chat assistance.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
