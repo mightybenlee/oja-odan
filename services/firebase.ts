@@ -1,17 +1,22 @@
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeApp } from "firebase/app";
 import { 
   getAuth, 
   GoogleAuthProvider, 
+  FacebookAuthProvider,
+  OAuthProvider,
   signInWithPopup, 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+} from "firebase/auth";
+import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 
-// --- PASTE YOUR FIREBASE CONFIG HERE ---
+/**
+ * Replace these placeholders with your REAL Firebase config from the console.
+ * You MUST enable Google, Facebook, and Apple in your Firebase Auth tab.
+ */
 const firebaseConfig = {
   apiKey: "AIzaSyAHkztGejStIi5rJFVJ7NO8IkVJJ2ByoE4",
   authDomain: "oja-odan-6fc94.firebaseapp.com",
@@ -25,12 +30,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
 const googleProvider = new GoogleAuthProvider();
+const facebookProvider = new FacebookAuthProvider();
+const appleProvider = new OAuthProvider('apple.com');
 
 export { 
   auth, 
   db, 
   googleProvider, 
+  facebookProvider,
+  appleProvider,
   signInWithPopup, 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
