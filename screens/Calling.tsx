@@ -1,6 +1,6 @@
 import React from 'react';
 import { Phone, Video, MoreHorizontal, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
-import GlassCard from '../components/GlassCard';
+import GlassCard from './components/GlassCard';
 import { Contact } from '../types';
 
 const Calling: React.FC = () => {
