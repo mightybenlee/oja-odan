@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { Eye, EyeOff, Mail, Lock, Camera, Chrome, Facebook, Apple, ArrowLeft } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
-import { Screen } from '../types';
+import { Screen } from '/types';
 import { 
   auth, 
   db, 
