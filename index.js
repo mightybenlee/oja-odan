@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { 
   Home, MessageCircle, User as UserIcon, Send, 
-  Mail, Lock, Camera, Chrome, Facebook, Apple, 
+  Mail, Lock, Chrome, Facebook, Apple, 
   ShieldCheck, LogOut, Eye, EyeOff, Sparkles, Globe,
-  Heart, Share2, MessageSquare, Plus, Bell, MoreHorizontal,
-  ArrowRight, ArrowLeft, Loader2, Zap, Smartphone
+  Heart, MessageSquare, Plus, Bell, MoreHorizontal,
+  ArrowRight, ArrowLeft, Loader2, Smartphone
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { initializeApp, getApps } from "firebase/app";
@@ -29,10 +29,10 @@ const firebaseConfig = {
 };
 
 // --- SAFE INITIALIZATION ---
-let auth: any = null;
-let googleProvider: any = null;
-let facebookProvider: any = null;
-let appleProvider: any = null;
+let auth = null;
+let googleProvider = null;
+let facebookProvider = null;
+let appleProvider = null;
 
 try {
   const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
@@ -45,19 +45,19 @@ try {
 }
 
 // =========================================================
-// 2. MAIN COMPONENT
+// 2. MAIN APP COMPONENT
 // =========================================================
-const App: React.FC = () => {
-  const [screen, setScreen] = useState<'landing' | 'login' | 'register' | 'home' | 'oracle' | 'messenger' | 'profile'>('landing');
-  const [user, setUser] = useState<any>(null);
+const App = () => {
+  const [screen, setScreen] = useState('landing');
+  const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [initError, setInitError] = useState<string | null>(null);
 
-  // --- INITIALIZATION CHECK ---
+  // --- AUTH OBSERVER ---
   useEffect(() => {
     if (!auth) {
-      setInitError("Firebase configuration is missing or invalid. Please update the firebaseConfig in index.tsx.");
+      setError("Firebase keys are missing. Open index.js and paste your config.");
       setIsLoading(false);
       return;
     }
@@ -65,7 +65,7 @@ const App: React.FC = () => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         setUser({
-          name: firebaseUser.displayName || 'Member',
+          name: firebaseUser.displayName || 'Sanctuary Member',
           email: firebaseUser.email,
           avatar: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`
         });
@@ -73,46 +73,63 @@ const App: React.FC = () => {
       } else {
         setUser(null);
         if (['home', 'oracle', 'messenger', 'profile'].includes(screen)) {
-            setScreen('landing');
+          setScreen('landing');
         }
       }
       setIsLoading(false);
     });
     return () => unsubscribe();
-  }, [screen]);
+  }, []);
 
   // --- HANDLERS ---
-  const handleSocialAuth = async (platform: 'google' | 'facebook' | 'apple') => {
-    if (!auth) return alert("Setup Firebase first!");
+  const handleSocialAuth = async (platform) => {
+    if (!auth) return alert("Firebase keys missing!");
     const provider = platform === 'google' ? googleProvider : platform === 'facebook' ? facebookProvider : appleProvider;
     try {
       setIsLoading(true);
       await signInWithPopup(auth, provider);
-    } catch (err: any) {
+    } catch (err) {
       alert(`Social Login Failed: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleEmailAuth = async (e: React.FormEvent, isReg: boolean) => {
+  const handleEmailAuth = async (e, isReg) => {
     e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const email = (form.querySelector('input[type="email"]') as HTMLInputElement).value;
-    const password = (form.querySelector('input[type="password"]') as HTMLInputElement).value;
+    const form = e.target;
+    const email = form.querySelector('input[type="email"]').value;
+    const password = form.querySelector('input[type="password"]').value;
+
     try {
       setIsLoading(true);
       if (isReg) await createUserWithEmailAndPassword(auth, email, password);
       else await signInWithEmailAndPassword(auth, email, password);
-    } catch (err: any) {
+    } catch (err) {
       alert(err.message);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const askOracle = async (prompt) => {
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: {
+          systemInstruction: "You are the Oracle of Oja-odan, a wise mystical guide. Provide cultural wisdom and community guidance. Keep it poetic but helpful.",
+        }
+      });
+      return response.text;
+    } catch (err) {
+      return "The connection to the ancestors is flickering. Try again later.";
+    }
+  };
+
   // --- UI COMPONENTS ---
-  const GlassCard = ({ children, className = "", onClick }: any) => (
+  const GlassCard = ({ children, className = "", onClick }) => (
     <div onClick={onClick} className={`glass-panel rounded-[2.5rem] p-5 transition-all ${onClick ? 'cursor-pointer active:scale-95' : ''} ${className}`}>
       {children}
     </div>
@@ -128,7 +145,7 @@ const App: React.FC = () => {
       ].map((item) => (
         <button
           key={item.id}
-          onClick={() => setScreen(item.id as any)}
+          onClick={() => setScreen(item.id)}
           className={`p-2 rounded-full transition-all ${screen === item.id ? 'bg-white text-indigo-950 shadow-xl scale-110' : 'text-white/40'}`}
         >
           {item.icon}
@@ -137,27 +154,7 @@ const App: React.FC = () => {
     </div>
   );
 
-  // --- RENDERERS ---
-
-  if (initError) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center p-10 text-center bg-[#0f172a]">
-        <Smartphone size={60} className="text-red-500 mb-6" />
-        <h1 className="text-2xl font-black text-white uppercase mb-4">Portal Connection Error</h1>
-        <p className="text-white/50 text-sm leading-relaxed mb-10">{initError}</p>
-        <button onClick={() => window.location.reload()} className="px-8 py-4 glass-panel rounded-full text-[10px] font-black tracking-widest uppercase">Retry Protocol</button>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center bg-[#0f172a]">
-        <Loader2 size={40} className="animate-spin text-pink-500 mb-4" />
-        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Synchronizing Sanctuary...</p>
-      </div>
-    );
-  }
+  // --- SCREEN RENDERS ---
 
   const renderLanding = () => (
     <div className="flex flex-col h-full animate-in">
@@ -167,10 +164,10 @@ const App: React.FC = () => {
         <div className="absolute bottom-16 left-10 right-10">
           <div className="flex items-center gap-2 mb-4 opacity-70">
             <Globe size={14} className="text-pink-400" />
-            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Culture • Future • Unity</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Culture • Unity</span>
           </div>
           <h1 className="text-7xl font-black italic tracking-tighter text-white mb-2 leading-none uppercase">Oja<br/>odan</h1>
-          <p className="text-white/60 text-sm font-medium">Your heritage, digitally reimagined.</p>
+          <p className="text-white/60 text-sm font-medium">Digital Sanctuary for the Tribe.</p>
         </div>
       </div>
       <div className="p-10 flex flex-col justify-center flex-1 space-y-4">
@@ -184,7 +181,7 @@ const App: React.FC = () => {
     </div>
   );
 
-  const renderAuth = (isReg: boolean) => (
+  const renderAuth = (isReg) => (
     <div className="flex flex-col h-full p-8 animate-in overflow-y-auto no-scrollbar">
       <button onClick={() => setScreen('landing')} className="w-12 h-12 glass-panel rounded-full flex items-center justify-center mb-12"><ArrowLeft size={20} /></button>
       <div className="text-center mb-10">
@@ -205,7 +202,7 @@ const App: React.FC = () => {
             </button>
           </div>
           <button className="w-full bg-white text-purple-900 font-black py-5 rounded-full shadow-2xl tracking-widest text-xs uppercase">
-            {isReg ? 'Create Account' : 'Sign In'}
+            {isReg ? 'Register' : 'Authenticate'}
           </button>
         </form>
         <div className="mt-12 text-center">
@@ -227,7 +224,6 @@ const App: React.FC = () => {
         <button className="p-3 glass-panel rounded-full text-white/50 relative"><Bell size={20} /><div className="absolute top-2.5 right-2.5 w-2 h-2 bg-pink-500 rounded-full"></div></button>
       </div>
       
-      {/* Feed Mockup */}
       <div className="space-y-6">
         <GlassCard className="p-0 overflow-hidden border-white/5 shadow-2xl">
           <div className="p-4 flex items-center gap-3">
@@ -248,6 +244,53 @@ const App: React.FC = () => {
     </div>
   );
 
+  const renderOracle = () => {
+    const [msgs, setMsgs] = useState([]);
+    const [input, setInput] = useState("");
+    const [isTyping, setIsTyping] = useState(false);
+    const scrollRef = useRef(null);
+
+    useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs]);
+
+    const handleAsk = async () => {
+      if (!input.trim()) return;
+      const t = input;
+      setInput("");
+      setMsgs(p => [...p, { role: 'user', text: t }]);
+      setIsTyping(true);
+      const res = await askOracle(t);
+      setMsgs(p => [...p, { role: 'oracle', text: res }]);
+      setIsTyping(false);
+    };
+
+    return (
+      <div className="flex flex-col h-full animate-in overflow-hidden">
+        <div className="pt-16 pb-8 text-center glass-panel border-b border-white/5">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 p-0.5 mx-auto mb-4">
+            <div className="w-full h-full rounded-full bg-indigo-950 flex items-center justify-center"><Sparkles className="text-pink-400" size={32} /></div>
+          </div>
+          <h2 className="text-3xl font-black italic tracking-tighter text-white uppercase">The Oracle</h2>
+          <p className="text-[10px] text-white/30 uppercase font-black tracking-[0.4em]">Ancient Knowledge, Digital Soul</p>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
+          {msgs.map((m, i) => (
+            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[85%] p-5 rounded-[2rem] text-sm leading-relaxed ${m.role === 'user' ? 'bg-white text-indigo-950 font-bold rounded-tr-none' : 'glass-panel border-pink-500/20 text-pink-100 rounded-tl-none'}`}>{m.text}</div>
+            </div>
+          ))}
+          {isTyping && <div className="text-[10px] text-pink-400 animate-pulse tracking-widest font-black text-center uppercase">Channelling...</div>}
+          <div ref={scrollRef} />
+        </div>
+        <div className="p-6 pb-28">
+          <div className="glass-panel rounded-full p-2 flex items-center gap-3 border-white/10 shadow-2xl">
+            <input value={input} onChange={(e)=>setInput(e.target.value)} onKeyDown={(e)=>e.key==='Enter'&&handleAsk()} placeholder="Ask for wisdom..." className="flex-1 bg-transparent px-6 outline-none text-sm text-white" />
+            <button onClick={handleAsk} className="w-12 h-12 rounded-full bg-pink-500 flex items-center justify-center text-white shadow-lg"><Send size={18} /></button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderProfile = () => (
     <div className="flex flex-col h-full p-8 pb-32 animate-in text-center">
       <div className="mt-16 mb-12">
@@ -257,18 +300,38 @@ const App: React.FC = () => {
         <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter">{user?.name}</h2>
         <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.5em] mt-2">{user?.email}</p>
       </div>
-      <button onClick={() => signOut(auth)} className="mt-auto w-full py-5 rounded-full glass-panel border-red-500/20 text-red-400 font-black text-xs tracking-widest flex items-center justify-center gap-3 uppercase active:scale-95"><LogOut size={18} /> Sign Out from Sanctuary</button>
+      <button onClick={() => signOut(auth)} className="mt-auto w-full py-5 rounded-full glass-panel border-red-500/20 text-red-400 font-black text-xs tracking-widest flex items-center justify-center gap-3 uppercase active:scale-95"><LogOut size={18} /> Sign Out</button>
     </div>
   );
 
+  if (isLoading) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center bg-[#0f172a]">
+        <Loader2 size={40} className="animate-spin text-pink-500 mb-4" />
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Synchronizing...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center bg-[#0f172a] p-10 text-center">
+        <Smartphone size={60} className="text-red-500 mb-6" />
+        <h1 className="text-2xl font-black text-white uppercase mb-4">Portal Error</h1>
+        <p className="text-white/50 text-sm leading-relaxed mb-10">{error}</p>
+        <button onClick={() => window.location.reload()} className="px-8 py-4 glass-panel rounded-full text-[10px] font-black tracking-widest uppercase">Retry Connection</button>
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full h-full flex flex-col overflow-hidden bg-sanctuary">
-      <div className="absolute top-[-20%] left-[-10%] w-[120%] h-[50%] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="relative z-10 w-full h-full">
         {screen === 'landing' ? renderLanding() : 
          screen === 'login' ? renderAuth(false) : 
          screen === 'register' ? renderAuth(true) : 
          screen === 'home' ? renderHome() : 
+         screen === 'oracle' ? renderOracle() :
          screen === 'profile' ? renderProfile() : renderLanding()}
       </div>
       {!['landing', 'login', 'register'].includes(screen) && <BottomNav />}
@@ -276,9 +339,9 @@ const App: React.FC = () => {
   );
 };
 
-// --- START ---
-const container = document.getElementById('root');
-if (container) {
-  const root = createRoot(container);
-  root.render(<App />);
+// Start the Application
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  const root = createRoot(rootElement);
+  root.render(React.createElement(App));
 }
