@@ -66,7 +66,7 @@ loginForm.addEventListener("submit", async (e) => {
   const password = document.getElementById("login-password").value;
   try {
     await signInWithEmailAndPassword(auth, email, password);
-    window.location.href = "home.html";
+  window.location.replace("/home.html");
   } catch(err) {
     alert("Login failed: " + err.message);
   }
@@ -81,7 +81,7 @@ registerForm.addEventListener("submit", async (e) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await userCredential.user.updateProfile({ displayName: name });
-    window.location.href = "home.html";
+    window.location.replace("/home.html");
   } catch(err) {
     alert("Registration failed: " + err.message);
   }
@@ -92,20 +92,20 @@ registerForm.addEventListener("submit", async (e) => {
 googleBtn.onclick = async () => {
   try {
     await signInWithPopup(auth, googleProvider);
-    window.location.href = "home.html";
+   window.location.replace("/home.html");
   } catch(err) { alert(err.message); }
 };
 
 facebookBtn.onclick = async () => {
   try {
     await signInWithPopup(auth, facebookProvider);
-    window.location.href = "home.html";
+    window.location.replace("/home.html");
   } catch(err) { alert(err.message); }
 };
 
 appleBtn.onclick = async () => {
   try {
     await signInWithPopup(auth, appleProvider);
-    window.location.href = "home.html";
+   window.location.replace("/home.html");
   } catch(err) { alert(err.message); }
 };
