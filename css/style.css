@@ -1,0 +1,444 @@
+/* ===== Modern Pink Glass Redesign (Original Names Preserved) ===== */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
+
+:root {
+  --main-bg: linear-gradient(135deg, #ff416c 0%, #ff4b2b 50%, #702283 100%);
+  --glass-white: rgba(255, 255, 255, 0.18);
+  --glass-border: rgba(255, 255, 255, 0.25);
+}
+
+/* ===== Body ===== */
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  margin: 0;
+  background: var(--main-bg);
+  background-attachment: fixed;
+  color: #fff;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===== Header ===== */
+/* ===== Updated Header (Fixed & Glass) ===== */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  z-index: 2000;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  position: relative; /* Crucial for the dropdown positioning */
+}
+
+.nav-links {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.nav-links a {
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* The Toggle Button (=) */
+.menu-toggle {
+  background: white;
+  color: #ff416c;
+  border: none;
+  width: 35px;
+  height: 35px;
+  border-radius: 8px;
+  font-size: 22px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* ===== Footer ===== */
+footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  padding: 15px 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  border-top: 1px solid var(--glass-border);
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+}
+
+/* ===== Container ===== */
+.container {
+  max-width: 600px;
+  margin: 100px auto 80px auto;
+  padding: 0 15px;
+}
+
+/* ===== Glass Card ===== */
+.glass-card {
+  background: var(--glass-white);
+  backdrop-filter: blur(15px);
+  border-radius: 25px;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* ===== Inputs & Textarea ===== */
+input, textarea {
+  width: 100%;
+  padding: 14px 15px;
+  margin: 8px 0;
+  border-radius: 15px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+input::placeholder, textarea::placeholder {
+  color: rgba(255,255,255,0.7);
+}
+
+/* ===== Buttons ===== */
+button {
+  padding: 12px 24px;
+  border-radius: 50px; /* Pill shape from image */
+  border: none;
+  font-weight: 700;
+  font-size: 14px;
+  margin-top: 10px;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+}
+
+button:hover {
+  transform: translateY(-2px) scale(1.05);
+  cursor: pointer;
+  filter: brightness(1.1);
+}
+
+.primary-btn {
+  background: linear-gradient(90deg, #ff416c, #ff4b2b);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(255, 65, 108, 0.4);
+}
+
+.secondary-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--glass-border);
+  color: #fff;
+}
+
+/* ===== Posts ===== */
+.post {
+  border-radius: 25px;
+  padding: 20px;
+  margin-bottom: 20px;
+  background: var(--glass-white);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  transition: all 0.3s ease;
+}
+
+/* ===== Post Header ===== */
+.post-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.post-header img {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+/* ===== Chat System ===== */
+.chat-msg {
+  background: rgba(255, 255, 255, 0.15);
+  margin: 10px;
+  padding: 12px 18px;
+  border-radius: 20px 20px 20px 5px;
+  border: 1px solid var(--glass-border);
+}
+
+.chat-msg.me {
+  /* Matching the dark purple bubble in your image */
+  background: linear-gradient(135deg, #6e48aa, #9d50bb);
+  margin-left: auto;
+  border: none;
+  border-radius: 20px 20px 5px 20px;
+}
+
+/* ===== Status Dots ===== */
+.dot.online {
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+}
+
+/* Keep original utilities */
+.hidden { display: none; }
+
+
+
+
+
+/* ===== Updated Pink Glass Theme ===== */
+:root {
+  --main-gradient: linear-gradient(135deg, #ff416c 0%, #ff4b2b 50%, #702283 100%);
+  --glass: rgba(255, 255, 255, 0.15);
+  --glass-border: rgba(255, 255, 255, 0.25);
+  --text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+body {
+  background: var(--main-gradient);
+  background-attachment: fixed;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ===== Header Design ===== */
+header {
+  background: var(--glass);
+  backdrop-filter: blur(25px);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 10px 20px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.header-content {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 20px;
+  letter-spacing: 2px;
+  font-weight: 800;
+  text-shadow: var(--text-shadow);
+}
+
+.header-nav {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  position: relative;
+}
+
+.header-nav a {
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: opacity 0.3s;
+}
+
+.header-nav a:hover {
+  opacity: 0.7;
+}
+
+/* Toggle Button (=) */
+.menu-toggle {
+  background: white;
+  color: #ff416c;
+  width: 35px;
+  height: 35px;
+  padding: 0;
+  border-radius: 10px;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+/* Dropdown Menu (Glass Card style) */
+.notif-dropdown {
+  top: 50px;
+  right: 0;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(30px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  width: 200px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  padding: 10px 0;
+}
+
+.notif-item {
+  padding: 12px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  color: white;
+  transition: background 0.2s;
+}
+
+.notif-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ===== Beautiful Footer ===== */
+footer {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--glass-border);
+  border-radius: 30px 30px 0 0;
+  padding: 10px 0 25px 0; /* Extra bottom padding for mobile height */
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+}
+
+.footer-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 10px;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.nav-item span {
+  margin-top: 4px;
+}
+
+.nav-item.active {
+  opacity: 1;
+  background: white;
+  color: #ff416c;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  justify-content: center;
+  transform: translateY(-15px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  font-size: 20px;
+}
+
+.badge {
+  background: #fff;
+  color: #ff416c;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 20px;
+  font-weight: 800;
+}
+
+.hidden { display: none; }
+
+/* Ensure the content spans the full width and pushes nav to the right */
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 20px;
+}
+
+/* Groups the links and the button together */
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative; /* This is what keeps the dropdown pinned to the button */
+}
+
+/* The toggle button styling */
+.menu-toggle {
+  background: white;
+  color: #ff416c;
+  border: none;
+  width: 35px;
+  height: 35px;
+  border-radius: 8px;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Force dropdown to right corner */
+.notif-dropdown {
+  position: absolute;
+  top: 55px; /* Adjust based on header height */
+  right: 0;
+  min-width: 180px;
+  z-index: 1000;
+}
+
+/* Fix footer layout spacing */
+.footer-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* Hide links on small mobile screens if it gets too crowded */
+@media (max-width: 480px) {
+  .nav-links.desktop-only {
+    display: none;
+  }
+}
