@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel | Oja-odan</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js"></script>
+</head>
+<body>
+    
+   <header>
+  <div class="header-content">
+  <h1 class="logo">
+  <a href="home.html" style="text-decoration: none; color: inherit;">[🏠]</a>
+</h1>
+    
+    <nav class="header-nav">
+      <div class="nav-links">
+        <a href="search.html">Search</a>
+        <a href="#">Inbox</a>
+        <a href="friends.html">Friends</a>
+        <div class="notif-wrapper">
+          <a href="notifications.html">Notifications <span class="badge"> </span></a>
+        </div>
+      </div>
+      
+      <button class="menu-toggle" onclick="toggleMenu()">=</button>
+      
+      <div id="main-dropdown" class="notif-dropdown hidden">
+        <a href="profile.html" class="notif-item">Profile</a>
+        <a href="marketplace.html" class="notif-item">Marketplace</a>
+        <a href="groups.html" class="notif-item">Group</a>
+        <a href="#" class="notif-item"> </a>
+        <a href="fun.html" class="notif-item">Fun</a>
+        <a href="shoutout.html" class="notif-item">Shoutout</a>
+        <hr style="border: 0.5px solid rgba(255,255,255,0.1); margin: 5px 0;">
+        <a href="logout.html" class="notif-item" style="color: #ff416c;">🫀Logout</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section>
+      <h2>ADMIN</h2>
+    <h2>Users</h2>
+    <div id="users-list"></div>
+  </section>
+
+  <section>
+    <h2>Groups</h2>
+    <div id="groups-list"></div>
+  </section>
+</main>
+
+
+<footer>
+  <div class="footer-nav">
+    <div class="nav-item">🏠<span>Home</span></div>
+    <div class="nav-item">🔍<span>Search</span></div>
+    <div class="nav-item active">➕</div>
+    <div class="nav-item">💬<span>Chat</span></div>
+    <div class="nav-item">👤<span>Profile</span></div>
+  </div>
+</footer>
+
+<script>
+  function toggleMenu() {
+    const dropdown = document.getElementById('main-dropdown');
+    dropdown.classList.toggle('hidden');
+  }
+  
+  // Close dropdown if clicking outside
+  window.onclick = function(event) {
+    if (!event.target.matches('.menu-toggle')) {
+      const dropdown = document.getElementById('main-dropdown');
+      if (!dropdown.classList.contains('hidden')) {
+        dropdown.classList.add('hidden');
+      }
+    }
+  }
+</script>
+
+
+
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>
+

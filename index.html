@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oja-odan | Login/Register</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js"></script>
+</head>
+<body>
+
+<header>
+  <h1>Oja-odan</h1>
+</header>
+
+<main class="container">
+
+  <div class="glass-card" style="max-width:400px; margin:auto;">
+    <!-- Toggle Buttons -->
+    <div style="display:flex; justify-content:center; margin-bottom:15px;">
+      <button id="toggle-login" class="secondary-btn" style="flex:1; margin-right:5px;">Login</button>
+      <button id="toggle-register" class="secondary-btn" style="flex:1; margin-left:5px;">Register</button>
+    </div>
+
+    <!-- Login Form -->
+    <form id="login-form">
+      <input type="email" id="login-email" placeholder="Email" required>
+      <input type="password" id="login-password" placeholder="Password" required>
+      <button type="submit" class="primary-btn">Login</button>
+      <div style="text-align:center; margin:10px 0;">or</div>
+      <div style="display:flex; justify-content:space-around;">
+        <button id="google-login" class="secondary-btn">Google</button>
+        <button id="facebook-login" class="secondary-btn">Facebook</button>
+        <button id="apple-login" class="secondary-btn">Apple</button>
+      </div>
+    </form>
+
+    <!-- Register Form -->
+    <form id="register-form" style="display:none;">
+      <input type="text" id="reg-name" placeholder="Full Name" required>
+      <input type="email" id="reg-email" placeholder="Email" required>
+      <input type="password" id="reg-password" placeholder="Password" required>
+      <button type="submit" class="primary-btn">Register</button>
+    </form>
+
+  </div>
+</main>
+
+<footer>
+  <div class="footer-nav">
+   
+    <div class="nav-item active">➕</div>
+    <div class="nav-item">👤<span>Design by Mightyben</span></div>
+  </div>
+ <p>© 2026 Oja-odan. Social Connection Made Fun!</p>
+
+</footer>
+<script>
+  function toggleMenu() {
+    const dropdown = document.getElementById('main-dropdown');
+    dropdown.classList.toggle('hidden');
+  }
+  
+  // Close dropdown if clicking outside
+  window.onclick = function(event) {
+    if (!event.target.matches('.menu-toggle')) {
+      const dropdown = document.getElementById('main-dropdown');
+      if (!dropdown.classList.contains('hidden')) {
+        dropdown.classList.add('hidden');
+      }
+    }
+  }
+</script>
+
+
+
+<script type="module" src="js/admin.js"></script>
+<script type="module" src="auth.js"></script>
+<script>
+  // Toggle between Login/Register
+  const loginForm = document.getElementById("login-form");
+  const registerForm = document.getElementById("register-form");
+  const toggleLogin = document.getElementById("toggle-login");
+  const toggleRegister = document.getElementById("toggle-register");
+
+  toggleLogin.onclick = () => {
+    loginForm.style.display = "block";
+    registerForm.style.display = "none";
+    toggleLogin.style.background = "#ff416c";
+    toggleRegister.style.background = "#38ef7d";
+  };
+  toggleRegister.onclick = () => {
+    loginForm.style.display = "none";
+    registerForm.style.display = "block";
+    toggleLogin.style.background = "#38ef7d";
+    toggleRegister.style.background = "#ff416c";
+  };
+
+  // Initialize button colors
+  toggleLogin.style.background = "#ff416c";
+  toggleRegister.style.background = "#38ef7d";
+</script>
+</body>
+</html>
