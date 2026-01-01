@@ -2,6 +2,24 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebas
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot, query, where, arrayUnion } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
+import { auth, db } from "/js/firebase.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+onAuthStateChanged(auth, async user => {
+  if (!user) {
+    window.location.replace("/index.html");
+    return;
+  }
+
+  const snap = await getDoc(doc(db, "users", user.uid));
+
+  if (!snap.exists() || snap.data().role !== "admin") {
+    alert("Admins only");
+    window.location.replace("/home.html");
+  }
+});
+
 // ===== Firebase Config =====
 const firebaseConfig = {
   apiKey: "AIzaSyAHkztGejStIi5rJFVJ7NO8IkVJJ2ByoE4",
@@ -97,4 +115,4 @@ async function loadGroups() {
       };
     });
   });
-}
+    }
