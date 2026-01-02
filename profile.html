@@ -3,28 +3,112 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Profile | Oja-odan</title>
+<title>Oja-odan | Profile</title>
 <link rel="stylesheet" href="css/style.css">
+
+<!-- Firebase COMPAT SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+<!-- Firebase init -->
+<script src="js/firebase.js"></script>
 </head>
+
 <body>
 
 <header>
-  <h1>Profile</h1>
-  <a href="home.html">🏠</a>
+  <div class="header-content">
+    <h1 class="logo"><a href="home.html">[🏠]</a></h1>
+ 
+    <!-- Toggle button -->
+    <button class="menu-toggle" onclick="toggleMenu()">≡</button>
+
+    <!-- Dropdown menu -->
+    <div id="main-dropdown" class="notif-dropdown hidden">
+      <a href="profile.html">Profile</a>
+      <a href="marketplace.html">Marketplace</a>
+      <a href="groups.html">Groups</a>
+      <a href="fun.html">Fun</a>
+      <a href="notifications.html">Notifications</a>
+      <a href="games.html">Games</a>
+      <hr>
+      <button id="logoutBtn" class="secondary-btn">Logout</button>
+    </div>
+  </div>
 </header>
+
 
 <main class="container">
 
   <div class="glass-card profile-card">
-    <img id="profile-avatar" src="" width="120">
-    <input type="file" id="avatar-upload" accept="image/*">
-    <input type="text" id="profile-name" placeholder="Your name">
-    <button id="save-profile" class="primary-btn">Save</button>
+
+    <div class="profile-avatar">
+      <img id="profileAvatar" src="assets/default-avatar.png" alt="avatar" width="120">
+      <input type="file" id="avatarUpload" accept="image/*">
+      <button id="changeAvatarBtn" class="secondary-btn">Change Avatar</button>
+    </div>
+
+    <div class="profile-info">
+      <input type="text" id="profileFirstName" placeholder="First Name">
+      <input type="text" id="profileLastName" placeholder="Last Name">
+      <input type="text" id="profileUsername" placeholder="Username">
+      <input type="email" id="profileEmail" placeholder="Email" disabled>
+      <input type="text" id="profileNumber" placeholder="Phone Number">
+      <input type="text" id="profileAddress" placeholder="Address">
+      <select id="profileSex">
+        <option value="" disabled selected>Sex</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+        <option value="other">Other</option>
+      </select>
+      <select id="profileGender">
+        <option value="" disabled selected>Gender Identity</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+        <option value="non-binary">Non-binary</option>
+        <option value="other">Other</option>
+      </select>
+
+      <button id="saveProfileBtn" class="primary-btn">Save Profile</button>
+    </div>
+
   </div>
 
 </main>
 
-<script type="module" src="/js/authGuard.js"></script>
-<script type="module" src="/profile.js"></script>
+<footer>
+  <div class="footer-nav">
+    <div class="nav-item"><a href="home.html">🏠Home</a></div>
+    <div class="nav-item"><a href="friends.html">👥Friends</a></div>
+    <div class="nav-item"><a href="groups.html">➕Groups</a></div>
+    <div class="nav-item"><a href="notifications.html">🔔Notifications</a></div>
+    <div class="nav-item"><a href="profile.html">👤Profile</a></div>
+  </div>
+</footer>
+<script src="js/vpnCheck.js"></script>
+<script>
+  checkVPN();
+</script>
+<script src="js/authGuard.js"></script>
+<script src="js/profile.js"></script>
+
+<script>
+function toggleMenu() {
+  const dropdown = document.getElementById('main-dropdown');
+  dropdown.classList.toggle('hidden');
+}
+
+// Close dropdown when clicking outside
+window.onclick = function(event) {
+  if (!event.target.matches('.menu-toggle')) {
+    const dropdown = document.getElementById('main-dropdown');
+    if (!dropdown.classList.contains('hidden')) {
+      dropdown.classList.add('hidden');
+    }
+  }
+};
+</script>
 </body>
 </html>
