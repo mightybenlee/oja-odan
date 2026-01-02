@@ -1,19 +1,10 @@
-import { auth, db, storage } from "./firebase.js";
+import { auth, db, storage } from "/js/firebase.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 import {
-  onAuthStateChanged,
-  signOut,
-  updateProfile
-} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
   doc,
+  getDoc,
   updateDoc
 } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-
 import {
   ref,
   uploadBytes,
@@ -21,152 +12,98 @@ import {
   deleteObject
 } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-storage.js";
 
-// DOM
-const logoutBtn = document.getElementById("logout-btn");
-const profileAvatar = document.getElementById("profile-avatar");
-const changeAvatar = document.getElementById("change-avatar");
-const avatarUpload = document.getElementById("avatar-upload");
-const profileName = document.getElementById("profile-name");
-const profileBio = document.getElementById("profile-bio");
-const saveProfile = document.getElementById("save-profile");
-const userPostsDiv = document.getElementById("user-posts");
+// --------------------
+// DOM ELEMENTS
+// --------------------
+const avatarImg = document.getElementById("profile-avatar");
+const nameInput = document.getElementById("profile-name");
+const bioInput = document.getElementById("profile-bio");
+const saveBtn = document.getElementById("save-profile");
 
-let currentUser;
-let currentAvatarPath = null;
+const avatarInput = document.getElementById("avatar-upload");
+const changeAvatarBtn = document.getElementById("change-avatar");
 
-// AUTH CHECK
-onAuthStateChanged(auth, async user => {
-  if (!user) {
-    window.location.href = "index.html";
-    return;
+// --------------------
+// LOAD USER PROFILE
+// --------------------
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+
+  const userRef = doc(db, "users", user.uid);
+  const snap = await getDoc(userRef);
+
+  if (snap.exists()) {
+    const data = snap.data();
+    nameInput.value = data.name || "";
+    bioInput.value = data.bio || "";
+    if (data.avatar) avatarImg.src = data.avatar;
   }
-
-  currentUser = user;
-  profileAvatar.src = user.photoURL || `https://i.pravatar.cc/100?u=${user.uid}`;
-  profileName.value = user.displayName || "";
-
-  loadUserPosts();
 });
 
-// LOGOUT
-logoutBtn.onclick = () => {
-  signOut(auth).then(() => window.location.href = "index.html");
-};
-
-// CHANGE AVATAR
-changeAvatar.onclick = () => avatarUpload.click();
-
-avatarUpload.onchange = async e => {
-  const file = e.target.files[0];
-  if (!file) return;
+// --------------------
+// SAVE PROFILE (NAME + BIO)
+// --------------------
+saveBtn.addEventListener("click", async () => {
+  const user = auth.currentUser;
+  if (!user) return;
 
   try {
-    // delete old avatar
-    if (currentAvatarPath) {
-      await deleteObject(ref(storage, currentAvatarPath)).catch(() => {});
-    }
-
-    // upload new
-    const avatarRef = ref(storage, `avatars/${currentUser.uid}`);
-    await uploadBytes(avatarRef, file);
-    const url = await getDownloadURL(avatarRef);
-
-    currentAvatarPath = avatarRef.fullPath;
-
-    await updateProfile(currentUser, { photoURL: url });
-    await updateDoc(doc(db, "users", currentUser.uid), {
-      photo: url,
-      photoPath: currentAvatarPath
-    });
-
-    profileAvatar.src = url;
-    alert("Profile picture updated");
-  } catch (err) {
-    alert(err.message);
-  }
-};
-
-// SAVE PROFILE
-saveProfile.onclick = async () => {
-  try {
-    await updateProfile(currentUser, {
-      displayName: profileName.value
-    });
-
-    await updateDoc(doc(db, "users", currentUser.uid), {
-      name: profileName.value,
-      bio: profileBio.value
+    await updateDoc(doc(db, "users", user.uid), {
+      name: nameInput.value.trim(),
+      bio: bioInput.value.trim()
     });
 
     alert("Profile updated");
   } catch (err) {
     alert(err.message);
   }
-};
+});
 
-// LOAD USER POSTS
-function loadUserPosts() {
-  const q = query(
-    collection(db, "posts"),
-    where("uid", "==", currentUser.uid)
-  );
+// --------------------
+// AVATAR UPLOAD (REPLACE + DELETE OLD)
+// --------------------
+changeAvatarBtn.addEventListener("click", () => {
+  avatarInput.click();
+});
 
-  onSnapshot(q, snap => {
-    userPostsDiv.innerHTML = "";
-    snap.forEach(d => {
-      const post = d.data();
-      userPostsDiv.innerHTML += `<div class="glass-card"><p>${post.text}</p></div>`;
-    });
-  });
-}
+avatarInput.addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-import {
-  getDoc
-} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+  const user = auth.currentUser;
+  if (!user) return;
 
-const blockBtn = document.getElementById("blockUserBtn");
-const unblockBtn = document.getElementById("unblockUserBtn");
+  const userRef = doc(db, "users", user.uid);
+  const snap = await getDoc(userRef);
 
-// profileUserId = UID of profile being viewed
-let profileUserId = null;
-
-// Call this when viewing another user's profile
-async function loadPrivacyState() {
-  if (!profileUserId || profileUserId === currentUser.uid) return;
-
-  const myDoc = await getDoc(doc(db, "users", currentUser.uid));
-  const blocked = myDoc.data()?.blocked || {};
-
-  if (blocked[profileUserId]) {
-    blockBtn.classList.add("hidden");
-    unblockBtn.classList.remove("hidden");
-  } else {
-    unblockBtn.classList.add("hidden");
-    blockBtn.classList.remove("hidden");
+  let oldPath = null;
+  if (snap.exists()) {
+    oldPath = snap.data().avatarPath || null;
   }
-}
 
-blockBtn.onclick = async () => {
-  await updateDoc(doc(db, "users", currentUser.uid), {
-    [`blocked.${profileUserId}`]: true
-  });
-  alert("User blocked");
-  loadPrivacyState();
-};
+  try {
+    // Delete old avatar if exists
+    if (oldPath) {
+      await deleteObject(ref(storage, oldPath));
+    }
 
-unblockBtn.onclick = async () => {
-  await updateDoc(doc(db, "users", currentUser.uid), {
-    [`blocked.${profileUserId}`]: false
-  });
-  alert("User unblocked");
-  loadPrivacyState();
-};
+    // Upload new avatar
+    const newPath = `avatars/${user.uid}_${Date.now()}`;
+    const avatarRef = ref(storage, newPath);
 
-async function isBlocked(targetUid) {
-  const snap = await getDoc(doc(db, "users", targetUid));
-  return snap.data()?.blocked?.[currentUser.uid];
-}
+    await uploadBytes(avatarRef, file);
+    const url = await getDownloadURL(avatarRef);
 
-reportUserBtn.onclick = () => {
-  reportItem("user", profileUserId, "Harassment");
-};
+    // Update Firestore
+    await updateDoc(userRef, {
+      avatar: url,
+      avatarPath: newPath
+    });
+
+    avatarImg.src = url;
+    alert("Avatar updated");
+
+  } catch (err) {
+    alert(err.message);
+  }
+});
