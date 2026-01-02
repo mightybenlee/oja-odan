@@ -1,157 +1,107 @@
-// /js/auth.js
-import { auth, db } from "/js/firebase.js";
+// js/auth.js
 
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-  FacebookAuthProvider,
-  OAuthProvider,
-  signInWithPopup
-} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+// Get forms
+const loginForm = document.getElementById("loginForm");
+const registerForm = document.getElementById("registerForm");
 
-import {
-  doc,
-  setDoc,
-  getDoc,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+// Login form elements
+const loginEmail = document.getElementById("loginEmail");
+const loginPassword = document.getElementById("loginPassword");
 
-// --------------------
-// DOM ELEMENTS
-// --------------------
-const loginForm = document.getElementById("login-form");
-const registerForm = document.getElementById("register-form");
+// Register form elements
+const regFirstName = document.getElementById("regFirstName");
+const regLastName = document.getElementById("regLastName");
+const regUsername = document.getElementById("regUsername");
+const regEmail = document.getElementById("regEmail");
+const regNumber = document.getElementById("regNumber");
+const regAddress = document.getElementById("regAddress");
+const regSex = document.getElementById("regSex");
+const regGender = document.getElementById("regGender");
+const regPassword = document.getElementById("regPassword");
+const regRetypePassword = document.getElementById("regRetypePassword");
 
-const loginEmail = document.getElementById("login-email");
-const loginPassword = document.getElementById("login-password");
+// ---------------- LOGIN -----------------
+loginForm.addEventListener("submit", e => {
+  e.preventDefault(); // prevent reload
 
-const regName = document.getElementById("reg-name");
-const regEmail = document.getElementById("reg-email");
-const regPassword = document.getElementById("reg-password");
+  const email = loginEmail.value.trim();
+  const password = loginPassword.value;
 
-const googleBtn = document.getElementById("google-login");
-const facebookBtn = document.getElementById("facebook-login");
-const appleBtn = document.getElementById("apple-login");
+  if (!email || !password) {
+    alert("Please fill in all fields.");
+    return;
+  }
 
-// --------------------
-// PROVIDERS
-// --------------------
-const googleProvider = new GoogleAuthProvider();
-const facebookProvider = new FacebookAuthProvider();
-const appleProvider = new OAuthProvider("apple.com");
+  auth.signInWithEmailAndPassword(email, password)
+    .then(async (cred) => {
+      const user = cred.user;
+      const adminSnap = await db.collection("admins").doc(user.uid).get();
 
-// --------------------
-// EMAIL LOGIN
-// --------------------
-loginForm.addEventListener("submit", async (e) => {
-  e.preventDefault(); // 🔴 STOP PAGE RELOAD
+      if (adminSnap.exists) {
+        // User is admin → go to admin page
+        window.location.href = "admin.html";
+      } else {
+        // Normal user → home
+        window.location.href = "home.html";
+      }
+    })
+    .catch(err => alert("Login failed: " + err.message));
+});
+// ---------------- REGISTER -----------------
+registerForm.addEventListener("submit", async e => {
+  e.preventDefault(); // prevent reload
+
+  // Trim inputs
+  const firstName = regFirstName.value.trim();
+  const lastName = regLastName.value.trim();
+  const username = regUsername.value.trim();
+  const email = regEmail.value.trim();
+  const number = regNumber.value.trim();
+  const address = regAddress.value.trim();
+  const sex = regSex.value;
+  const gender = regGender.value;
+  const password = regPassword.value;
+  const retype = regRetypePassword.value;
+
+  // Validation
+  if (!firstName || !lastName || !username || !email || !number || !address || !sex || !gender || !password || !retype) {
+    alert("Please fill in all fields.");
+    return;
+  }
+
+  if (password !== retype) {
+    alert("Passwords do not match.");
+    return;
+  }
 
   try {
-    await signInWithEmailAndPassword(
-      auth,
-      loginEmail.value.trim(),
-      loginPassword.value.trim()
-    );
+    // Create Firebase Auth user
+    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    const user = userCredential.user;
 
-    window.location.replace("/home.html");
-  } catch (err) {
-    alert(err.message);
-  }
-});
-
-// --------------------
-// EMAIL REGISTER
-// --------------------
-registerForm.addEventListener("submit", async (e) => {
-  e.preventDefault(); // 🔴 STOP PAGE RELOAD
-
-  try {
-    const cred = await createUserWithEmailAndPassword(
-      auth,
-      regEmail.value.trim(),
-      regPassword.value.trim()
-    );
-
-    // Create user profile if not exists
-    const userRef = doc(db, "users", cred.user.uid);
-    const snap = await getDoc(userRef);
-
-    if (!snap.exists()) {
-      await setDoc(userRef, {
-        name: regName.value.trim(),
-        email: regEmail.value.trim(),
-        role: "user",
-        createdAt: serverTimestamp(),
-        blocked: false
-      });
-    }
-
-    window.location.replace("/home.html");
-  } catch (err) {
-    alert(err.message);
-  }
-});
-
-// --------------------
-// GOOGLE LOGIN
-// --------------------
-googleBtn.addEventListener("click", async (e) => {
-  e.preventDefault();
-
-  try {
-    const result = await signInWithPopup(auth, googleProvider);
-    await ensureUserDoc(result.user);
-    window.location.replace("/home.html");
-  } catch (err) {
-    alert(err.message);
-  }
-});
-
-// --------------------
-// FACEBOOK LOGIN
-// --------------------
-facebookBtn.addEventListener("click", async (e) => {
-  e.preventDefault();
-
-  try {
-    const result = await signInWithPopup(auth, facebookProvider);
-    await ensureUserDoc(result.user);
-    window.location.replace("/home.html");
-  } catch (err) {
-    alert(err.message);
-  }
-});
-
-// --------------------
-// APPLE LOGIN
-// --------------------
-appleBtn.addEventListener("click", async (e) => {
-  e.preventDefault();
-
-  try {
-    const result = await signInWithPopup(auth, appleProvider);
-    await ensureUserDoc(result.user);
-    window.location.replace("/home.html");
-  } catch (err) {
-    alert(err.message);
-  }
-});
-
-// --------------------
-// ENSURE USER DOCUMENT
-// --------------------
-async function ensureUserDoc(user) {
-  const ref = doc(db, "users", user.uid);
-  const snap = await getDoc(ref);
-
-  if (!snap.exists()) {
-    await setDoc(ref, {
-      name: user.displayName || "New User",
-      email: user.email,
-      role: "user",
-      createdAt: serverTimestamp(),
-      blocked: false
+    // Save user details in Firestore
+    await db.collection("users").doc(user.uid).set({
+      firstName,
+      lastName,
+      username,
+      email,
+      phoneNumber: number,
+      address,
+      sex,
+      gender,
+      role: "user",        // default role
+      status: "active",    // active by default
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+
+    alert("Registration successful!");
+    window.location.href = "home.html";
+
+  } catch (err) {
+    alert("Registration failed: " + err.message);
   }
-}
+});
+
+
+
+
