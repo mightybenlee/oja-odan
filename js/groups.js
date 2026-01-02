@@ -1,176 +1,149 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-import {
-  getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc,
-  doc, onSnapshot, query, where, arrayUnion
-} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-import {
-  getStorage, ref, uploadBytes, getDownloadURL
-} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-storage.js";
+// js/groups.js
 
-/* ===== Firebase ===== */
-const firebaseConfig = {
-  apiKey: "AIzaSyAHkztGejStIi5rJFVJ7NO8IkVJJ2ByoE4",
-  authDomain: "oja-odan-6fc94.firebaseapp.com",
-  projectId: "oja-odan-6fc94",
-  storageBucket: "oja-odan-6fc94.appspot.com",
-  appId: "1:1096739384978:web:4a79774605ace1e2cbc04b",
-  measurementId: "G-Y48C843PEQ"
-};
+const logoutBtn = document.getElementById("logoutBtn");
+const groupNameInput = document.getElementById("groupName");
+const groupTypeSelect = document.getElementById("groupType");
+const groupPinInput = document.getElementById("groupPin");
+const createGroupBtn = document.getElementById("createGroupBtn");
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
+const pendingGroupsDiv = document.getElementById("pendingGroups");
+const availableGroupsDiv = document.getElementById("availableGroups");
 
-/* ===== DOM ===== */
-const groupsList = document.getElementById("groups-list");
-const createBtn = document.getElementById("create-group-btn");
+let currentUser = null;
 
-let currentUser;
-
-/* ===== Auth ===== */
-onAuthStateChanged(auth, user => {
-  if (!user) location.href = "index.html";
+// ---------------- AUTH -----------------
+auth.onAuthStateChanged(user => {
+  if (!user) return;
   currentUser = user;
-  loadGroups();
+
+  loadPendingGroups();
+  loadAvailableGroups();
 });
 
-/* ================= CREATE GROUP ================= */
-createBtn.onclick = async () => {
-  const name = document.getElementById("group-name").value.trim();
-  const desc = document.getElementById("group-desc").value.trim();
-  const type = document.getElementById("group-type").value;
-  const pin = document.getElementById("group-pin").value.trim();
+// ---------------- LOGOUT -----------------
+logoutBtn.onclick = () => auth.signOut().then(() => window.location.href = "index.html");
 
-  if (!name || !desc) return alert("Fill all fields");
+// ---------------- CREATE GROUP -----------------
+createGroupBtn.onclick = async () => {
+  if (!currentUser) return;
+  if (window.__USER_STATUS__ === "suspended" || window.__USER_STATUS__ === "blocked") {
+    alert("You cannot create groups with your current status.");
+    return;
+  }
 
-  if (type === "private" && pin.length < 4)
-    return alert("Private group PIN must be at least 4 digits");
+  const name = groupNameInput.value.trim();
+  const type = groupTypeSelect.value;
+  const pin = groupPinInput.value.trim();
 
-  await addDoc(collection(db, "groups"), {
+  if (!name) {
+    alert("Enter a group name.");
+    return;
+  }
+
+  if (type === "private" && !pin) {
+    alert("Private groups require a PIN.");
+    return;
+  }
+
+  await db.collection("groups").add({
     name,
-    description: desc,
-    isPublic: type === "public",
+    type,
     pin: type === "private" ? pin : "",
-    adminUid: currentUser.uid,
+    creatorUid: currentUser.uid,
+    approved: false,
     members: [currentUser.uid],
-    status: type === "public" ? "approved" : "pending",
-    createdAt: new Date()
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 
-  alert("Group created. Awaiting admin approval if private.");
+  alert("Group created. Awaiting admin approval.");
+  groupNameInput.value = "";
+  groupPinInput.value = "";
+  loadPendingGroups();
 };
 
-/* ================= LOAD GROUPS ================= */
-function loadGroups() {
-  const q = query(collection(db, "groups"), where("status", "==", "approved"));
+// ---------------- LOAD PENDING GROUPS -----------------
+async function loadPendingGroups() {
+  const snap = await db.collection("groups")
+    .where("approved", "==", false)
+    .get();
 
-  onSnapshot(q, snapshot => {
-    groupsList.innerHTML = "";
+  pendingGroupsDiv.innerHTML = "";
 
-    snapshot.forEach(docu => {
-      const g = docu.data();
-      const div = document.createElement("div");
-      div.className = "glass-card";
+  snap.forEach(doc => {
+    const g = doc.data();
+    const div = document.createElement("div");
+    div.className = "glass-card";
+    div.innerHTML = `
+      <p><strong>${g.name}</strong> (${g.type})</p>
+      <button class="approveBtn secondary-btn">Approve</button>
+      <button class="rejectBtn danger-btn">Reject</button>
+    `;
 
-      const isMember = g.members.includes(currentUser.uid);
-
-      div.innerHTML = `
-        <h3>${g.name}</h3>
-        <p>${g.description}</p>
-        <p>${g.isPublic ? "🌍 Public" : "🔒 Private"}</p>
-
-        <button class="join-btn">
-          ${isMember ? "Joined" : "Join Group"}
-        </button>
-
-        ${isMember ? `
-          <textarea placeholder="Write something..." class="post-text"></textarea>
-          <input type="file" class="post-img">
-          <button class="post-btn">Post</button>
-          <div class="posts"></div>
-        ` : ""}
-      `;
-
-      groupsList.appendChild(div);
-
-      /* ===== JOIN ===== */
-      div.querySelector(".join-btn").onclick = async () => {
-        if (isMember) return;
-
-        if (!g.isPublic) {
-          const userPin = prompt("Enter group PIN");
-          if (userPin !== g.pin) return alert("Wrong PIN");
-        }
-
-        await updateDoc(doc(db, "groups", docu.id), {
-          members: arrayUnion(currentUser.uid)
-        });
-
-        // notify admin
-        await addDoc(collection(db, "notifications"), {
-          to: g.adminUid,
-          type: "group",
-          message: `${currentUser.email} joined ${g.name}`,
-          timestamp: new Date()
-        });
+    // Only admin can approve/reject
+    if (window.__USER_ROLE__ !== "admin") {
+      div.querySelector(".approveBtn").disabled = true;
+      div.querySelector(".rejectBtn").disabled = true;
+    } else {
+      div.querySelector(".approveBtn").onclick = async () => {
+        await db.collection("groups").doc(doc.id).update({ approved: true });
+        alert("Group approved.");
+        loadPendingGroups();
+        loadAvailableGroups();
       };
+      div.querySelector(".rejectBtn").onclick = async () => {
+        await db.collection("groups").doc(doc.id).delete();
+        alert("Group rejected.");
+        loadPendingGroups();
+      };
+    }
 
-      /* ===== POSTS ===== */
-      if (isMember) {
-        const postBtn = div.querySelector(".post-btn");
-        const postText = div.querySelector(".post-text");
-        const postImg = div.querySelector(".post-img");
-        const postsDiv = div.querySelector(".posts");
+    pendingGroupsDiv.appendChild(div);
+  });
+}
 
-        postBtn.onclick = async () => {
-          if (!postText.value && !postImg.files[0]) return;
+// ---------------- LOAD AVAILABLE GROUPS -----------------
+async function loadAvailableGroups() {
+  const snap = await db.collection("groups")
+    .where("approved", "==", true)
+    .get();
 
-          let imgUrl = "";
-          if (postImg.files[0]) {
-            const imgRef = ref(storage, `groupPosts/${Date.now()}`);
-            await uploadBytes(imgRef, postImg.files[0]);
-            imgUrl = await getDownloadURL(imgRef);
-          }
+  availableGroupsDiv.innerHTML = "";
 
-          await addDoc(collection(db, "groups", docu.id, "posts"), {
-            author: currentUser.email,
-            text: postText.value,
-            image: imgUrl,
-            timestamp: new Date()
-          });
+  snap.forEach(doc => {
+    const g = doc.data();
+    const div = document.createElement("div");
+    div.className = "glass-card";
+    div.innerHTML = `
+      <p><strong>${g.name}</strong> (${g.type})</p>
+      <button class="joinBtn primary-btn">Join</button>
+      <button class="leaveBtn danger-btn">Leave</button>
+    `;
 
-          // notify members
-          g.members.forEach(uid => {
-            if (uid !== currentUser.uid) {
-              addDoc(collection(db, "notifications"), {
-                to: uid,
-                type: "group",
-                message: `New post in ${g.name}`,
-                timestamp: new Date()
-              });
-            }
-          });
-
-          postText.value = "";
-          postImg.value = "";
-        };
-
-        onSnapshot(collection(db, "groups", docu.id, "posts"), snap => {
-          postsDiv.innerHTML = "";
-          snap.forEach(p => {
-            const post = p.data();
-            postsDiv.innerHTML += `
-              <div class="post">
-                <strong>${post.author}</strong>
-                <p>${post.text}</p>
-                ${post.image ? `<img src="${post.image}">` : ""}
-              </div>
-            `;
-          });
-        });
+    // Join button
+    div.querySelector(".joinBtn").onclick = async () => {
+      if (g.type === "private") {
+        const pin = prompt("Enter PIN to join this private group:");
+        if (pin !== g.pin) {
+          alert("Incorrect PIN.");
+          return;
+        }
       }
-    });
+      const membersRef = db.collection("groups").doc(doc.id);
+      await membersRef.update({
+        members: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+      });
+      alert("Joined group!");
+    };
+
+    // Leave button
+    div.querySelector(".leaveBtn").onclick = async () => {
+      const membersRef = db.collection("groups").doc(doc.id);
+      await membersRef.update({
+        members: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+      });
+      alert("Left group!");
+    };
+
+    availableGroupsDiv.appendChild(div);
   });
 }
