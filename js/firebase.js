@@ -1,8 +1,6 @@
 // js/firebase.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
+// 🔴 REPLACE with your REAL Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyAHkztGejStIi5rJFVJ7NO8IkVJJ2ByoE4",
   authDomain: "oja-odan-6fc94.firebaseapp.com",
@@ -12,6 +10,10 @@ const firebaseConfig = {
   appId: "1:1096739384978:web:4a79774605ace1e2cbc04b"
 };
 
-export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+
+// Global references
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
