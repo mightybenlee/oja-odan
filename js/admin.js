@@ -1,83 +1,100 @@
-import { auth, db } from "/js/firebase.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+import { auth, db } from "./firebase.js";
 import {
   collection,
   getDocs,
-  doc,
   updateDoc,
-  deleteDoc
+  deleteDoc,
+  doc
 } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
+// ===== DOM =====
 const usersList = document.getElementById("users-list");
+const groupsList = document.getElementById("groups-list");
 
-/* AUTH CHECK (extra safety) */
-onAuthStateChanged(auth, user => {
-  if (!user) {
-    location.href = "/index.html";
-  } else {
-    loadUsers();
-  }
-});
-
-/* LOAD USERS */
+// ===== LOAD USERS =====
 async function loadUsers() {
   usersList.innerHTML = "Loading users...";
+
   const snap = await getDocs(collection(db, "users"));
   usersList.innerHTML = "";
 
-  snap.forEach(docu => {
-    const u = docu.data();
-    const uid = docu.id;
+  snap.forEach(userDoc => {
+    const u = userDoc.data();
 
     const div = document.createElement("div");
     div.className = "glass-card";
-    div.style.marginBottom = "10px";
-
     div.innerHTML = `
-      <p><strong>${u.name || "No name"}</strong></p>
-      <p>${u.email || ""}</p>
+      <strong>${u.firstName || "User"} ${u.lastName || ""}</strong><br>
+      <small>${u.email}</small><br>
       <p>Status: <b>${u.status || "active"}</b></p>
-
-      <button class="secondary-btn" data-action="warn">Warn</button>
-      <button class="secondary-btn" data-action="suspend">Suspend</button>
-      <button class="danger-btn" data-action="block">Block</button>
-      <button class="danger-btn" data-action="delete">Delete</button>
+      <button class="danger-btn">Suspend</button>
+      <button class="secondary-btn">Delete</button>
     `;
 
-    div.querySelectorAll("button").forEach(btn => {
-      btn.onclick = () => handleAction(uid, btn.dataset.action);
-    });
+    const suspendBtn = div.querySelector(".danger-btn");
+    const deleteBtn = div.querySelector(".secondary-btn");
+
+    suspendBtn.onclick = async () => {
+      await updateDoc(doc(db, "users", userDoc.id), {
+        status: "suspended"
+      });
+      alert("User suspended");
+      loadUsers();
+    };
+
+    deleteBtn.onclick = async () => {
+      if (!confirm("Delete user permanently?")) return;
+      await deleteDoc(doc(db, "users", userDoc.id));
+      alert("User deleted");
+      loadUsers();
+    };
 
     usersList.appendChild(div);
   });
 }
 
-/* ADMIN ACTIONS */
-async function handleAction(uid, action) {
-  const ref = doc(db, "users", uid);
+// ===== LOAD GROUPS =====
+async function loadGroups() {
+  groupsList.innerHTML = "Loading groups...";
 
-  if (action === "warn") {
-    const msg = prompt("Enter warning message:");
-    if (!msg) return;
-    await updateDoc(ref, { warning: msg });
-    alert("Warning sent");
-  }
+  const snap = await getDocs(collection(db, "groups"));
+  groupsList.innerHTML = "";
 
-  if (action === "suspend") {
-    await updateDoc(ref, { status: "suspended" });
-    alert("User suspended");
-  }
+  snap.forEach(groupDoc => {
+    const g = groupDoc.data();
 
-  if (action === "block") {
-    await updateDoc(ref, { status: "blocked" });
-    alert("User blocked");
-  }
+    const div = document.createElement("div");
+    div.className = "glass-card";
+    div.innerHTML = `
+      <h4>${g.name}</h4>
+      <p>${g.description}</p>
+      <p>Status: <b>${g.status}</b></p>
+      ${g.status === "pending"
+        ? `<button class="primary-btn">Approve</button>`
+        : `<button class="danger-btn">Delete</button>`
+      }
+    `;
 
-  if (action === "delete") {
-    if (!confirm("Delete user permanently?")) return;
-    await deleteDoc(ref);
-    alert("User deleted");
-  }
+    const btn = div.querySelector("button");
 
-  loadUsers();
+    btn.onclick = async () => {
+      if (g.status === "pending") {
+        await updateDoc(doc(db, "groups", groupDoc.id), {
+          status: "approved"
+        });
+        alert("Group approved");
+      } else {
+        if (!confirm("Delete group?")) return;
+        await deleteDoc(doc(db, "groups", groupDoc.id));
+        alert("Group deleted");
+      }
+      loadGroups();
+    };
+
+    groupsList.appendChild(div);
+  });
 }
+
+// ===== INIT =====
+loadUsers();
+loadGroups();
