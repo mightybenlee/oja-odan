@@ -1,109 +1,50 @@
 import { auth, db, storage } from "/js/firebase.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-import {
-  doc,
-  getDoc,
-  updateDoc
-} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL,
-  deleteObject
-} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-storage.js";
+import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-storage.js";
 
-// --------------------
-// DOM ELEMENTS
-// --------------------
-const avatarImg = document.getElementById("profile-avatar");
+const avatar = document.getElementById("profile-avatar");
 const nameInput = document.getElementById("profile-name");
-const bioInput = document.getElementById("profile-bio");
+const upload = document.getElementById("avatar-upload");
 const saveBtn = document.getElementById("save-profile");
 
-const avatarInput = document.getElementById("avatar-upload");
-const changeAvatarBtn = document.getElementById("change-avatar");
+let currentUser = null;
+let oldAvatarPath = "";
 
-// --------------------
-// LOAD USER PROFILE
-// --------------------
-onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, async user => {
   if (!user) return;
+  currentUser = user;
 
-  const userRef = doc(db, "users", user.uid);
-  const snap = await getDoc(userRef);
-
+  const snap = await getDoc(doc(db, "users", user.uid));
   if (snap.exists()) {
     const data = snap.data();
     nameInput.value = data.name || "";
-    bioInput.value = data.bio || "";
-    if (data.avatar) avatarImg.src = data.avatar;
+    avatar.src = data.avatar || "";
+    oldAvatarPath = data.avatarPath || "";
   }
 });
 
-// --------------------
-// SAVE PROFILE (NAME + BIO)
-// --------------------
-saveBtn.addEventListener("click", async () => {
-  const user = auth.currentUser;
-  if (!user) return;
+saveBtn.onclick = async () => {
+  if (!currentUser) return;
 
-  try {
-    await updateDoc(doc(db, "users", user.uid), {
-      name: nameInput.value.trim(),
-      bio: bioInput.value.trim()
-    });
+  let avatarUrl = avatar.src;
+  let avatarPath = oldAvatarPath;
 
-    alert("Profile updated");
-  } catch (err) {
-    alert(err.message);
-  }
-});
-
-// --------------------
-// AVATAR UPLOAD (REPLACE + DELETE OLD)
-// --------------------
-changeAvatarBtn.addEventListener("click", () => {
-  avatarInput.click();
-});
-
-avatarInput.addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const user = auth.currentUser;
-  if (!user) return;
-
-  const userRef = doc(db, "users", user.uid);
-  const snap = await getDoc(userRef);
-
-  let oldPath = null;
-  if (snap.exists()) {
-    oldPath = snap.data().avatarPath || null;
-  }
-
-  try {
-    // Delete old avatar if exists
-    if (oldPath) {
-      await deleteObject(ref(storage, oldPath));
+  if (upload.files[0]) {
+    if (oldAvatarPath) {
+      await deleteObject(ref(storage, oldAvatarPath)).catch(()=>{});
     }
-
-    // Upload new avatar
-    const newPath = `avatars/${user.uid}_${Date.now()}`;
-    const avatarRef = ref(storage, newPath);
-
-    await uploadBytes(avatarRef, file);
-    const url = await getDownloadURL(avatarRef);
-
-    // Update Firestore
-    await updateDoc(userRef, {
-      avatar: url,
-      avatarPath: newPath
-    });
-
-    avatarImg.src = url;
-    alert("Avatar updated");
-
-  } catch (err) {
-    alert(err.message);
+    avatarPath = `avatars/${currentUser.uid}`;
+    const imgRef = ref(storage, avatarPath);
+    await uploadBytes(imgRef, upload.files[0]);
+    avatarUrl = await getDownloadURL(imgRef);
   }
-});
+
+  await setDoc(doc(db, "users", currentUser.uid), {
+    name: nameInput.value,
+    avatar: avatarUrl,
+    avatarPath
+  });
+
+  alert("Profile saved");
+};
