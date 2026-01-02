@@ -442,3 +442,51 @@ footer {
     display: none;
   }
 }
+
+.menu-toggle {
+  font-size: 1.5rem;       /* bigger “=” symbol */
+  padding: 10px 15px;      /* makes it easier to tap */
+  border-radius: 10px;     /* rounded corners */
+  background-color: rgba(255,255,255,0.1); /* semi-transparent */
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.menu-toggle:hover {
+  background-color: rgba(255,255,255,0.2);
+}
+
+.notif-dropdown {
+  position: absolute;
+  top: 50px;                /* below the header */
+  right: 10px;
+  width: 200px;
+  background-color: rgba(15,23,42,0.95);
+  border-radius: 10px;
+  padding: 10px 0;
+  display: none;            /* hidden by default */
+  z-index: 999;
+}
+
+.notif-dropdown a {
+  display: block;
+  padding: 8px 15px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.notif-dropdown a:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+.notif-dropdown.hidden {
+  display: none;
+}
+
+.notif-dropdown:not(.hidden) {
+  display: block;
+}
