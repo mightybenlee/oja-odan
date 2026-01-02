@@ -1,118 +1,83 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot, query, where, arrayUnion } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-
 import { auth, db } from "/js/firebase.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+import {
+  collection,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc
+} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-onAuthStateChanged(auth, async user => {
-  if (!user) {
-    window.location.replace("/index.html");
-    return;
-  }
+const usersList = document.getElementById("users-list");
 
-  const snap = await getDoc(doc(db, "users", user.uid));
-
-  if (!snap.exists() || snap.data().role !== "admin") {
-    alert("Admins only");
-    window.location.replace("/home.html");
-  }
-});
-
-// ===== Firebase Config =====
-const firebaseConfig = {
-  apiKey: "AIzaSyAHkztGejStIi5rJFVJ7NO8IkVJJ2ByoE4",
-  authDomain: "oja-odan-6fc94.firebaseapp.com",
-  projectId: "oja-odan-6fc94",
-  storageBucket: "oja-odan-6fc94.appspot.com",
-  messagingSenderId: "1096739384978",
-  appId: "1:1096739384978:web:4a79774605ace1e2cbc04b",
-  measurementId: "G-Y48C843PEQ"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth();
-const db = getFirestore(app);
-
-// ===== DOM Elements =====
-const groupNameInput = document.getElementById("group-name");
-const groupDescInput = document.getElementById("group-desc");
-const groupTypeSelect = document.getElementById("group-type");
-const groupPinInput = document.getElementById("group-pin");
-const createGroupBtn = document.getElementById("create-group-btn");
-const groupsListDiv = document.getElementById("groups-list");
-
-let currentUser;
-
-// ===== Auth Check =====
+/* AUTH CHECK (extra safety) */
 onAuthStateChanged(auth, user => {
-  if (!user) window.location.href = "index.html";
-  currentUser = user;
-  loadGroups();
+  if (!user) {
+    location.href = "/index.html";
+  } else {
+    loadUsers();
+  }
 });
 
-// ===== Create Group =====
-createGroupBtn.onclick = async () => {
-  const name = groupNameInput.value.trim();
-  const desc = groupDescInput.value.trim();
-  const type = groupTypeSelect.value;
-  const pin = type === "private" ? groupPinInput.value.trim() : "";
+/* LOAD USERS */
+async function loadUsers() {
+  usersList.innerHTML = "Loading users...";
+  const snap = await getDocs(collection(db, "users"));
+  usersList.innerHTML = "";
 
-  if (!name || !desc) return alert("Please fill all fields");
-  if (type === "private" && pin.length < 4) return alert("PIN must be at least 4 digits");
+  snap.forEach(docu => {
+    const u = docu.data();
+    const uid = docu.id;
 
-  await addDoc(collection(db, "groups"), {
-    name,
-    description: desc,
-    isPublic: type === "public",
-    pin,
-    adminUid: currentUser.uid,
-    members: [currentUser.uid], // Admin automatically member
-    status: type === "public" ? "approved" : "pending",
-    createdAt: new Date()
-  });
+    const div = document.createElement("div");
+    div.className = "glass-card";
+    div.style.marginBottom = "10px";
 
-  alert("Group created! Pending admin approval if private.");
-  groupNameInput.value = "";
-  groupDescInput.value = "";
-  groupPinInput.value = "";
-  loadGroups();
-};
+    div.innerHTML = `
+      <p><strong>${u.name || "No name"}</strong></p>
+      <p>${u.email || ""}</p>
+      <p>Status: <b>${u.status || "active"}</b></p>
 
-// ===== Load Groups =====
-async function loadGroups() {
-  const q = collection(db, "groups");
-  onSnapshot(q, snapshot => {
-    groupsListDiv.innerHTML = "";
+      <button class="secondary-btn" data-action="warn">Warn</button>
+      <button class="secondary-btn" data-action="suspend">Suspend</button>
+      <button class="danger-btn" data-action="block">Block</button>
+      <button class="danger-btn" data-action="delete">Delete</button>
+    `;
 
-    snapshot.docs.forEach(docu => {
-      const data = docu.data();
-      const div = document.createElement("div");
-      div.className = "glass-card";
-      div.innerHTML = `
-        <h3>${data.name} (${data.isPublic ? "Public" : "Private"})</h3>
-        <p>${data.description}</p>
-        <p>Status: ${data.status}</p>
-        <p>Members: ${data.members.length}</p>
-        <button class="join-btn">${data.members.includes(currentUser.uid) ? "Joined" : "Join"}</button>
-      `;
-      groupsListDiv.appendChild(div);
-
-      const joinBtn = div.querySelector(".join-btn");
-
-      joinBtn.onclick = async () => {
-        if (data.members.includes(currentUser.uid)) return alert("Already a member");
-
-        if (!data.isPublic) {
-          const userPin = prompt("Enter group PIN:");
-          if (userPin !== data.pin) return alert("Incorrect PIN!");
-        }
-
-        // Add user to members
-        await updateDoc(doc(db, "groups", docu.id), { members: arrayUnion(currentUser.uid) });
-        alert("Joined group!");
-      };
+    div.querySelectorAll("button").forEach(btn => {
+      btn.onclick = () => handleAction(uid, btn.dataset.action);
     });
+
+    usersList.appendChild(div);
   });
-    }
+}
+
+/* ADMIN ACTIONS */
+async function handleAction(uid, action) {
+  const ref = doc(db, "users", uid);
+
+  if (action === "warn") {
+    const msg = prompt("Enter warning message:");
+    if (!msg) return;
+    await updateDoc(ref, { warning: msg });
+    alert("Warning sent");
+  }
+
+  if (action === "suspend") {
+    await updateDoc(ref, { status: "suspended" });
+    alert("User suspended");
+  }
+
+  if (action === "block") {
+    await updateDoc(ref, { status: "blocked" });
+    alert("User blocked");
+  }
+
+  if (action === "delete") {
+    if (!confirm("Delete user permanently?")) return;
+    await deleteDoc(ref);
+    alert("User deleted");
+  }
+
+  loadUsers();
+}
