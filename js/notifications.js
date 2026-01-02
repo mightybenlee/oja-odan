@@ -1,71 +1,104 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-import {
-  getFirestore, collection, query, where, orderBy,
-  onSnapshot, updateDoc, doc
-} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+// js/notifications.js
 
-/* Firebase */
-const firebaseConfig = {
-  apiKey: "AIzaSyAHkztGejStIi5rJFVJ7NO8IkVJJ2ByoE4",
-  authDomain: "oja-odan-6fc94.firebaseapp.com",
-  projectId: "oja-odan-6fc94",
-  appId: "1:1096739384978:web:4a79774605ace1e2cbc04b",
-  measurementId: "G-Y48C843PEQ"
-};
+const logoutBtn = document.getElementById("logoutBtn");
+const friendRequestNotifications = document.getElementById("friendRequestNotifications");
+const groupNotifications = document.getElementById("groupNotifications");
+const adminNotifications = document.getElementById("adminNotifications");
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+let currentUser = null;
 
-/* DOM */
-const notifBtn = document.getElementById("notifBtn");
-const notifDropdown = document.getElementById("notifDropdown");
-const notifCount = document.getElementById("notifCount");
-
-let currentUser;
-
-/* TOGGLE */
-notifBtn.onclick = () => {
-  notifDropdown.classList.toggle("hidden");
-};
-
-/* AUTH */
-onAuthStateChanged(auth, user => {
+// ---------------- AUTH -----------------
+auth.onAuthStateChanged(async user => {
   if (!user) return;
   currentUser = user;
-  listenNotifications();
+
+  loadFriendRequestNotifications();
+  loadGroupNotifications();
+  loadAdminNotifications();
 });
 
-/* REALTIME LISTENER */
-function listenNotifications() {
-  const q = query(
-    collection(db, "notifications"),
-    where("to", "==", currentUser.uid),
-    orderBy("timestamp", "desc")
-  );
+// ---------------- LOGOUT -----------------
+logoutBtn.onclick = () => auth.signOut().then(() => window.location.href = "index.html");
 
-  onSnapshot(q, snap => {
-    notifDropdown.innerHTML = "";
-    let unread = 0;
+// ---------------- FRIEND REQUEST NOTIFICATIONS -----------------
+async function loadFriendRequestNotifications() {
+  const snap = await db.collection("friendRequests")
+    .where("to", "==", currentUser.uid)
+    .where("status", "==", "pending")
+    .get();
 
-    snap.forEach(d => {
-      const n = d.data();
-      if (!n.read) unread++;
+  friendRequestNotifications.innerHTML = "";
+  if (snap.empty) {
+    friendRequestNotifications.innerHTML = "<p>No new friend requests.</p>";
+    return;
+  }
 
-      const div = document.createElement("div");
-      div.className = "notif-item " + (!n.read ? "unread" : "");
-      div.innerHTML = `<p>${n.message}</p>`;
+  snap.forEach(doc => {
+    const r = doc.data();
+    const div = document.createElement("div");
+    div.className = "glass-card";
+    div.innerHTML = `
+      <p>Friend request from <strong>${r.from}</strong></p>
+      <button class="secondary-btn" onclick="acceptFriend('${doc.id}')">Accept</button>
+      <button class="danger-btn" onclick="rejectFriend('${doc.id}')">Reject</button>
+    `;
+    friendRequestNotifications.appendChild(div);
+  });
+}
 
-      div.onclick = async () => {
-        await updateDoc(doc(db, "notifications", d.id), { read: true });
-        if (n.link) location.href = n.link;
-      };
+async function acceptFriend(docId) {
+  const docRef = db.collection("friendRequests").doc(docId);
+  const docSnap = await docRef.get();
+  if (!docSnap.exists) return;
 
-      notifDropdown.appendChild(div);
-    });
+  const data = docSnap.data();
 
-    notifCount.innerText = unread;
-    notifCount.style.display = unread ? "inline-block" : "none";
+  // Add to friends collection for both users
+  await db.collection("friends").doc(currentUser.uid).set({
+    [data.from]: true
+  }, { merge: true });
+  await db.collection("friends").doc(data.from).set({
+    [currentUser.uid]: true
+  }, { merge: true });
+
+  await docRef.update({ status: "accepted" });
+  alert("Friend request accepted!");
+  loadFriendRequestNotifications();
+}
+
+async function rejectFriend(docId) {
+  await db.collection("friendRequests").doc(docId).update({ status: "rejected" });
+  alert("Friend request rejected!");
+  loadFriendRequestNotifications();
+}
+
+// ---------------- GROUP NOTIFICATIONS -----------------
+async function loadGroupNotifications() {
+  const snap = await db.collection("groups")
+    .where("members", "array-contains", currentUser.uid)
+    .get();
+
+  groupNotifications.innerHTML = "";
+
+  snap.forEach(doc => {
+    const g = doc.data();
+    const div = document.createElement("div");
+    div.className = "glass-card";
+    div.innerHTML = `<p>You are a member of group <strong>${g.name}</strong> (${g.type})</p>`;
+    groupNotifications.appendChild(div);
+  });
+}
+
+// ---------------- ADMIN SHOUTOUTS -----------------
+async function loadAdminNotifications() {
+  const snap = await db.collection("shoutouts").orderBy("createdAt", "desc").get();
+  adminNotifications.innerHTML = "";
+
+  snap.forEach(doc => {
+    const s = doc.data();
+    const div = document.createElement("div");
+    div.className = "glass-card";
+    div.innerHTML = `<p>${s.message}</p>`;
+    adminNotifications.appendChild(div);
   });
 }
