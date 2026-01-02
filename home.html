@@ -5,34 +5,123 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Oja-odan | Home</title>
 <link rel="stylesheet" href="css/style.css">
+
+<!-- Firebase COMPAT SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+<!-- Firebase init -->
+<script src="js/firebase.js"></script>
 </head>
+
 <body>
 
 <header>
-  <h1 class="logo">Oja-odan</h1>
-  <button id="logout-btn" class="secondary-btn">Logout</button>
+  <div class="header-content">
+    <h1 class="logo"><a href="home.html">[🏠]</a></h1>
+ 
+    <!-- Toggle button -->
+    <button class="menu-toggle" onclick="toggleMenu()">≡</button>
+
+    <!-- Dropdown menu -->
+    <div id="main-dropdown" class="notif-dropdown hidden">
+      <a href="profile.html">Profile</a>
+      <a href="marketplace.html">Marketplace</a>
+      <a href="groups.html">Groups</a>
+      <a href="fun.html">Fun</a>
+      <a href="notifications.html">Notifications</a>
+      <a href="games.html">Games</a>
+      <hr>
+      <button id="logoutBtn" class="secondary-btn">Logout</button>
+    </div>
+  </div>
 </header>
 
-<main class="container">
 
+<main class="container">
+<div class="minimal-marquee">
+  <div class="scroll-text">
+    Welcome to Oja-odan fun website!
+       Welcome to Oja-odan fun website! — 
+   Oja-odan,Yewa North Local government,Ogun-state website —
+  </div>
+</div>
+
+<style>
+  .minimal-marquee {
+    width: 100%;
+    overflow: hidden;
+    padding: 15px 0;
+    background: transparent; /* No background */
+  }
+
+  .scroll-text {
+    display: inline-block;
+    white-space: nowrap;
+    font-family: 'Inter', 'Segoe UI', Helvetica, Arial, sans-serif; /* Cool, modern font */
+    font-size: 18px;
+    font-weight: 300; /* Light/Thin look for style */
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #ffffff; /* Pure white text */
+    animation: scroll-left 30s linear infinite;
+  }
+
+  @keyframes scroll-left {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+</style>
+
+  <!-- CREATE POST -->
   <div class="glass-card create-post">
-    <textarea id="new-post-text" placeholder="What's on your mind?"></textarea>
-    <input type="file" id="post-image" accept="image/*">
-    <button id="post-btn" class="primary-btn">Post</button>
+    <textarea id="postText" placeholder="What's on your mind?"></textarea>
+    <input type="file" id="postImage" accept="image/*">
+    <button id="postBtn" class="primary-btn">Post</button>
+    
   </div>
 
-  <div id="posts-feed"></div>
+  <!-- POSTS FEED -->
+  <div id="feed"></div>
 
 </main>
 
 <footer>
   <div class="footer-nav">
-    <a href="home.html">🏠</a>
-    <a href="profile.html">👤</a>
+    <div class="nav-item"><a href="home.html">🏠Home</a></div>
+    <div class="nav-item"><a href="friends.html">👥Friends</a></div>
+    <div class="nav-item"><a href="groups.html">➕Groups</a></div>
+    <div class="nav-item"><a href="notifications.html">🔔Notifications</a></div>
+    <div class="nav-item"><a href="profile.html">👤Profile</a></div>
   </div>
 </footer>
 
-<script type="module" src="/js/authGuard.js"></script>
-<script type="module" src="/home.js"></script>
+<script src="js/vpnCheck.js"></script>
+<script>
+  checkVPN();
+</script>
+<!-- AUTH GUARD -->
+<script src="js/authGuard.js"></script>
+<!-- HOME LOGIC -->
+<script src="js/home.js"></script>
+
+<script>
+function toggleMenu() {
+  const dropdown = document.getElementById('main-dropdown');
+  dropdown.classList.toggle('hidden');
+}
+
+// Close dropdown if clicking outside
+window.onclick = function(event) {
+  if (!event.target.matches('.menu-toggle')) {
+    const dropdown = document.getElementById('main-dropdown');
+    if (!dropdown.classList.contains('hidden')) {
+      dropdown.classList.add('hidden');
+    }
+  }
+};
+</script>
 </body>
 </html>
