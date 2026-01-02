@@ -27,6 +27,10 @@ onAuthStateChanged(auth, user => {
   currentUser = user;
   loadFeed();
 });
+if (window.__USER_STATUS__ === "suspended") {
+  postBtn.disabled = true;
+  postBtn.innerText = "Account Suspended";
+}
 
 logoutBtn.onclick = () => {
   signOut(auth).then(() => {
