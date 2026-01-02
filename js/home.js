@@ -40,6 +40,10 @@ logoutBtn.onclick = () => {
 
 postBtn.onclick = async () => {
   if (!currentUser) return;
+  if (window.__USER_STATUS__ === "suspended") {
+  alert("Your account is suspended.");
+  return;
+  }
 
   const text = postText.value.trim();
   const file = postImage.files[0];
