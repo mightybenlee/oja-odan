@@ -1,163 +1,155 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, where, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+// js/friends.js
 
-// ===== Firebase Config =====
-const firebaseConfig = {
-  apiKey: "AIzaSyAHkztGejStIi5rJFVJ7NO8IkVJJ2ByoE4",
-  authDomain: "oja-odan-6fc94.firebaseapp.com",
-  projectId: "oja-odan-6fc94",
-  storageBucket: "oja-odan-6fc94.appspot.com",
-  messagingSenderId: "1096739384978",
-  appId: "1:1096739384978:web:4a79774605ace1e2cbc04b",
-  measurementId: "G-Y48C843PEQ"
-};
+const logoutBtn = document.getElementById("logoutBtn");
+const searchInput = document.getElementById("searchUserInput");
+const searchResults = document.getElementById("searchResults");
+const incomingRequests = document.getElementById("incomingRequests");
+const friendsList = document.getElementById("friendsList");
 
+let currentUser = null;
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth();
-const db = getFirestore(app);
-
-// ===== DOM Elements =====
-const logoutBtn = document.getElementById("logout-btn");
-const friendEmail = document.getElementById("friend-email");
-const sendRequestBtn = document.getElementById("send-request");
-const requestMsg = document.getElementById("request-msg");
-const pendingRequestsDiv = document.getElementById("pending-requests");
-const friendsListDiv = document.getElementById("friends-list");
-
-// ===== Auth Check =====
-let currentUser;
-onAuthStateChanged(auth, user => {
-  if(!user) window.location.href = "index.html";
+// ---------------- AUTH -----------------
+auth.onAuthStateChanged(async user => {
+  if (!user) return; // authGuard handles redirect
   currentUser = user;
-  loadPendingRequests();
+
   loadFriends();
+  loadIncomingRequests();
 });
 
-// ===== Logout =====
-logoutBtn.onclick = () => signOut(auth).then(() => window.location.href="index.html");
+// ---------------- LOGOUT -----------------
+logoutBtn.onclick = () => auth.signOut().then(() => window.location.href = "index.html");
 
-// ===== Send Friend Request with Notification =====
-sendRequestBtn.onclick = async () => {
-  const email = friendEmail.value.trim();
-  if(!email) return;
+// ---------------- SEARCH USERS -----------------
+searchInput.addEventListener("input", async () => {
+  const queryText = searchInput.value.trim().toLowerCase();
+  searchResults.innerHTML = "";
 
-  try {
-    // Add friend request
-    const requestRef = await addDoc(collection(db, "friendRequests"), {
-      from: currentUser.email,
-      to: email,
-      status: "pending",
-      timestamp: new Date()
-    });
+  if (!queryText) return;
 
-    // Add notification for recipient
-    await addDoc(collection(db, "notifications"), {
-      to: email,
-      from: currentUser.displayName || currentUser.email,
-      type: "friendRequest",
-      message: `${currentUser.displayName || currentUser.email} sent you a friend request`,
-      timestamp: new Date()
-    });
+  const snap = await db.collection("users")
+    .where("username", ">=", queryText)
+    .where("username", "<=", queryText + "\uf8ff")
+    .get();
 
-    requestMsg.textContent = "Friend request sent!";
-    friendEmail.value = "";
+  snap.forEach(doc => {
+    const u = doc.data();
+    if (doc.id === currentUser.uid) return; // skip self
 
-  } catch(err){
-    requestMsg.textContent = "Failed: " + err.message;
+    const div = document.createElement("div");
+    div.className = "glass-card";
+    div.innerHTML = `
+      <p><strong>${u.username}</strong></p>
+      <button data-uid="${doc.id}" class="sendRequestBtn secondary-btn">Send Friend Request</button>
+    `;
+    div.querySelector(".sendRequestBtn").onclick = () => sendFriendRequest(doc.id);
+    searchResults.appendChild(div);
+  });
+});
+
+// ---------------- SEND FRIEND REQUEST -----------------
+async function sendFriendRequest(targetUid) {
+  const requestRef = db.collection("friendRequests").doc(`${currentUser.uid}_${targetUid}`);
+  const exists = await requestRef.get();
+  if (exists.exists) {
+    alert("Request already sent.");
+    return;
   }
-};
 
-// ===== Load Pending Requests =====
-function loadPendingRequests() {
-  const q = query(collection(db, "friendRequests"), where("to", "==", currentUser.email));
-  onSnapshot(q, snapshot => {
-    pendingRequestsDiv.innerHTML = "";
+  await requestRef.set({
+    from: currentUser.uid,
+    to: targetUid,
+    status: "pending",
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
 
-    if(snapshot.empty){
-      pendingRequestsDiv.innerHTML = "<p>No pending requests</p>";
-      return;
-    }
+  alert("Friend request sent!");
+}
 
-    snapshot.docs.forEach(docu => {
-      const data = docu.data();
-      const div = document.createElement("div");
-      div.className = "glass-card friend-request";
-      div.innerHTML = `
-        <p><strong>${data.from}</strong> wants to be your friend</p>
-        <button class="accept-btn">Accept</button>
-        <button class="decline-btn">Decline</button>
-      `;
-      pendingRequestsDiv.appendChild(div);
+// ---------------- INCOMING REQUESTS -----------------
+async function loadIncomingRequests() {
+  const snap = await db.collection("friendRequests")
+    .where("to", "==", currentUser.uid)
+    .where("status", "==", "pending")
+    .get();
 
-      // Accept Friend
-      div.querySelector(".accept-btn").onclick = async () => {
-        await addDoc(collection(db, "friends"), {
-          users: [currentUser.email, data.from],
-          timestamp: new Date()
-        });
-        await deleteDoc(doc(db, "friendRequests", docu.id));
+  incomingRequests.innerHTML = "";
 
-        // Notification to sender that request accepted
-        await addDoc(collection(db, "notifications"), {
-          to: data.from,
-          from: currentUser.displayName || currentUser.email,
-          type: "friendRequestAccepted",
-          message: `${currentUser.displayName || currentUser.email} accepted your friend request`,
-          timestamp: new Date()
-        });
-      };
+  snap.forEach(doc => {
+    const r = doc.data();
+    const div = document.createElement("div");
+    div.className = "glass-card";
+    div.innerHTML = `
+      <p>Friend request from: <strong>${r.from}</strong></p>
+      <button data-id="${doc.id}" class="acceptBtn secondary-btn">Accept</button>
+      <button data-id="${doc.id}" class="rejectBtn danger-btn">Reject</button>
+    `;
 
-      // Decline Friend
-      div.querySelector(".decline-btn").onclick = async () => {
-        await deleteDoc(doc(db, "friendRequests", docu.id));
-      };
-    });
+    div.querySelector(".acceptBtn").onclick = () => respondRequest(doc.id, "accepted");
+    div.querySelector(".rejectBtn").onclick = () => respondRequest(doc.id, "rejected");
+
+    incomingRequests.appendChild(div);
   });
 }
 
-// ===== Load Friends List =====
-function loadFriends() {
-  const q = collection(db, "friends");
-  onSnapshot(q, snapshot => {
-    friendsListDiv.innerHTML = "";
+// ---------------- RESPOND TO REQUEST -----------------
+async function respondRequest(docId, action) {
+  const docRef = db.collection("friendRequests").doc(docId);
+  const docSnap = await docRef.get();
+  if (!docSnap.exists) return;
 
-    snapshot.docs.forEach(docu => {
-      const data = docu.data();
-      if(data.users.includes(currentUser.email)){
-        const friendEmailAddress = data.users.find(u => u !== currentUser.email);
-        const div = document.createElement("div");
-        div.className = "glass-card friend-item";
-        div.innerHTML = `
-          <p>${friendEmailAddress}</p>
-          <button class="block-btn">Block</button>
-        `;
-        friendsListDiv.appendChild(div);
+  const data = docSnap.data();
 
-        // Block friend (remove from friends)
-        div.querySelector(".block-btn").onclick = async () => {
-          await deleteDoc(doc(db, "friends", docu.id));
+  if (action === "accepted") {
+    // Add to friends collection for both users
+    await db.collection("friends").doc(currentUser.uid).set({
+      [data.from]: true
+    }, { merge: true });
 
-          // Optional: add notification about being blocked
-          await addDoc(collection(db, "notifications"), {
-            to: friendEmailAddress,
-            from: currentUser.displayName || currentUser.email,
-            type: "blocked",
-            message: `${currentUser.displayName || currentUser.email} blocked you`,
-            timestamp: new Date()
-          });
-        };
-      }
-    });
+    await db.collection("friends").doc(data.from).set({
+      [currentUser.uid]: true
+    }, { merge: true });
+  }
 
-    if(friendsListDiv.innerHTML === ""){
-      friendsListDiv.innerHTML = "<p>No friends yet</p>";
-    }
-  });
+  await docRef.update({ status: action });
+  loadIncomingRequests();
+  loadFriends();
 }
 
-async function isBlocked(targetUid) {
-  const snap = await getDoc(doc(db, "users", targetUid));
-  return snap.data()?.blocked?.[currentUser.uid];
+// ---------------- LOAD FRIENDS -----------------
+async function loadFriends() {
+  const snap = await db.collection("friends").doc(currentUser.uid).get();
+  friendsList.innerHTML = "";
+
+  if (!snap.exists) {
+    friendsList.innerHTML = "<p>No friends yet.</p>";
+    return;
+  }
+
+  const friendsData = snap.data();
+  for (const friendUid in friendsData) {
+    const userSnap = await db.collection("users").doc(friendUid).get();
+    const user = userSnap.data();
+
+    const div = document.createElement("div");
+    div.className = "glass-card";
+    div.innerHTML = `
+      <p><strong>${user.username || user.firstName}</strong></p>
+      <button data-uid="${friendUid}" class="blockBtn danger-btn">Block</button>
+    `;
+    div.querySelector(".blockBtn").onclick = () => blockFriend(friendUid);
+
+    friendsList.appendChild(div);
+  }
+}
+
+// ---------------- BLOCK FRIEND -----------------
+async function blockFriend(friendUid) {
+  if (!confirm("Are you sure you want to block this friend?")) return;
+  // Optionally, remove from friends collection
+  await db.collection("friends").doc(currentUser.uid).update({
+    [friendUid]: firebase.firestore.FieldValue.delete()
+  });
+  alert("Friend blocked.");
+  loadFriends();
 }
