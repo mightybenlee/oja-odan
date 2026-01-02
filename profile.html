@@ -3,72 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Oja-odan | Profile</title>
+<title>Profile | Oja-odan</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <header>
-      <h1 class="logo">
-  <a href="home.html" style="text-decoration: none; color: inherit;">🏠Home|</a>
-</h1>
   <h1>Profile</h1>
-  <button id="logout-btn" class="secondary-btn">Logout</button>
+  <a href="home.html">🏠</a>
 </header>
 
 <main class="container">
 
   <div class="glass-card profile-card">
-    <div class="profile-avatar">
-      <img id="profile-avatar" src="https://i.pravatar.cc/100" alt="avatar">
-      <input type="file" id="avatar-upload" accept="image/*" style="display:none;">
-      <button id="change-avatar" class="secondary-btn">Change Avatar</button>
-    </div>
-    <div class="profile-info">
-      <input type="text" id="profile-name" placeholder="Your Name">
-      <textarea id="profile-bio" placeholder="Write something about yourself..."></textarea>
-      <button id="save-profile" class="primary-btn">Save Profile</button>
-    </div>
-  </div>
-    
-<button id="blockUserBtn" class="danger-btn">Block User</button>
-
-<button id="unblockUserBtn" class="secondary-btn hidden">Unblock User</button>
-  <div class="glass-card">
-    <h3>Your Posts</h3>
-    <div id="user-posts"></div>
+    <img id="profile-avatar" src="" width="120">
+    <input type="file" id="avatar-upload" accept="image/*">
+    <input type="text" id="profile-name" placeholder="Your name">
+    <button id="save-profile" class="primary-btn">Save</button>
   </div>
 
 </main>
-<footer>
-  <div class="footer-nav">
-    <div class="nav-item">🏠<span>Home</span></div>
-    <div class="nav-item">🔍<span>Search</span></div>
-    <div class="nav-item active">➕</div>
-    <div class="nav-item">💬<span>Chat</span></div>
-    <div class="nav-item">👤<span>Profile</span></div>
-  </div>
-</footer>
 
-<script>
-  function toggleMenu() {
-    const dropdown = document.getElementById('main-dropdown');
-    dropdown.classList.toggle('hidden');
-  }
-  
-  // Close dropdown if clicking outside
-  window.onclick = function(event) {
-    if (!event.target.matches('.menu-toggle')) {
-      const dropdown = document.getElementById('main-dropdown');
-      if (!dropdown.classList.contains('hidden')) {
-        dropdown.classList.add('hidden');
-      }
-    }
-  }
-</script>
-
-<script type="module" src="/js/logout.js"></script>
-<script type="module" src="/profile.js"></script>
 <script type="module" src="/js/authGuard.js"></script>
+<script type="module" src="/profile.js"></script>
 </body>
 </html>
