@@ -1,24 +1,24 @@
-// js/authGuard.js
-import { auth } from "/js/firebase.js";
+import { auth, db } from "/js/firebase.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-let checked = false;
-
-onAuthStateChanged(auth, user => {
-  if (checked) return;
-  checked = true;
-
+onAuthStateChanged(auth, async (user) => {
   const path = window.location.pathname;
 
-  const publicPages = ["/index.html"];
-  const isPublic = publicPages.includes(path);
+  // Allow index.html always
+  if (path.includes("index.html")) return;
 
-  if (!user && !isPublic) {
+  // Not logged in → block everything
+  if (!user) {
     window.location.replace("/index.html");
     return;
   }
 
-  if (user && path === "/index.html") {
-    window.location.replace("/home.html");
+  // Admin page protection
+  if (path.includes("admin.html")) {
+    const adminSnap = await getDoc(doc(db, "admins", user.uid));
+    if (!adminSnap.exists()) {
+      window.location.replace("/home.html");
+    }
   }
 });
