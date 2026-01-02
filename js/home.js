@@ -1,87 +1,85 @@
-import { auth, db, storage } from "/js/firebase.js";
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-import {
-  collection,
-  addDoc,
-  onSnapshot,
-  serverTimestamp,
-  query,
-  orderBy
-} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL
-} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-storage.js";
+// js/home.js
 
-const postBtn = document.getElementById("post-btn");
-const postText = document.getElementById("new-post-text");
-const postImage = document.getElementById("post-image");
-const feed = document.getElementById("posts-feed");
-const logoutBtn = document.getElementById("logout-btn");
+const postBtn = document.getElementById("postBtn");
+const postText = document.getElementById("postText");
+const postImage = document.getElementById("postImage");
+const feed = document.getElementById("feed");
+const logoutBtn = document.getElementById("logoutBtn");
 
 let currentUser = null;
 
-onAuthStateChanged(auth, user => {
-  if (!user) return;
+// ---------------- AUTH -----------------
+auth.onAuthStateChanged(user => {
+  if (!user) return; // authGuard already redirects
   currentUser = user;
+
+  // Disable posting for suspended users
+  if (window.__USER_STATUS__ === "suspended") {
+    postBtn.disabled = true;
+    postBtn.innerText = "Account Suspended";
+  }
+
   loadFeed();
 });
-if (window.__USER_STATUS__ === "suspended") {
-  postBtn.disabled = true;
-  postBtn.innerText = "Account Suspended";
-}
 
+// ---------------- LOGOUT -----------------
 logoutBtn.onclick = () => {
-  signOut(auth).then(() => {
-    location.href = "/index.html";
+  auth.signOut().then(() => {
+    window.location.href = "index.html";
   });
 };
 
+// ---------------- CREATE POST -----------------
 postBtn.onclick = async () => {
   if (!currentUser) return;
   if (window.__USER_STATUS__ === "suspended") {
-  alert("Your account is suspended.");
-  return;
+    alert("Your account is suspended. Cannot post.");
+    return;
   }
 
   const text = postText.value.trim();
   const file = postImage.files[0];
-  if (!text && !file) return;
 
-  let imageUrl = "";
-
-  if (file) {
-    const imgRef = ref(storage, `posts/${currentUser.uid}_${Date.now()}`);
-    await uploadBytes(imgRef, file);
-    imageUrl = await getDownloadURL(imgRef);
+  if (!text && !file) {
+    alert("Cannot post empty content.");
+    return;
   }
 
-  await addDoc(collection(db, "posts"), {
+  let imageUrl = "";
+  if (file) {
+    const storageRef = storage.ref(`posts/${currentUser.uid}_${Date.now()}`);
+    await storageRef.put(file);
+    imageUrl = await storageRef.getDownloadURL();
+  }
+
+  await db.collection("posts").add({
     uid: currentUser.uid,
     author: currentUser.displayName || currentUser.email,
     text,
     image: imageUrl,
-    createdAt: serverTimestamp()
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 
   postText.value = "";
   postImage.value = "";
 };
 
+// ---------------- LOAD FEED -----------------
 function loadFeed() {
-  const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-  onSnapshot(q, snap => {
+  const query = db.collection("posts").orderBy("createdAt", "desc");
+  query.onSnapshot(snapshot => {
     feed.innerHTML = "";
-    snap.forEach(d => {
-      const p = d.data();
+    snapshot.forEach(doc => {
+      const post = doc.data();
+
       const div = document.createElement("div");
-      div.className = "glass-card";
+      div.className = "glass-card post";
       div.innerHTML = `
-        <h4>${p.author}</h4>
-        <p>${p.text || ""}</p>
-        ${p.image ? `<img src="${p.image}" style="width:100%;border-radius:10px;">` : ""}
+        <p><strong>${post.author}</strong></p>
+        <p>${post.text || ""}</p>
+        ${post.image ? `<img src="${post.image}" class="post-image">` : ""}
       `;
+
       feed.appendChild(div);
     });
   });
