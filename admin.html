@@ -7,83 +7,44 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    
-   <header>
+
+<header>
   <div class="header-content">
-  <h1 class="logo">
-  <a href="home.html" style="text-decoration: none; color: inherit;">[🏠]</a>
-</h1>
-    
+    <h1 class="logo">
+      <a href="home.html">[🏠]</a>
+    </h1>
+
     <nav class="header-nav">
-      <div class="nav-links">
-        <a href="search.html">Search</a>
-        <a href="#">Inbox</a>
-        <a href="friends.html">Friends</a>
-        <div class="notif-wrapper">
-          <a href="notifications.html">Notifications <span class="badge"> </span></a>
-        </div>
-      </div>
-      
       <button class="menu-toggle" onclick="toggleMenu()">=</button>
-      
       <div id="main-dropdown" class="notif-dropdown hidden">
-        <a href="profile.html" class="notif-item">Profile</a>
-        <a href="marketplace.html" class="notif-item">Marketplace</a>
-        <a href="groups.html" class="notif-item">Group</a>
-        <a href="#" class="notif-item"> </a>
-        <a href="fun.html" class="notif-item">Fun</a>
-        <a href="shoutout.html" class="notif-item">Shoutout</a>
-        <hr style="border: 0.5px solid rgba(255,255,255,0.1); margin: 5px 0;">
-        <a href="logout.html" class="notif-item" style="color: #ff416c;">🫀Logout</a>
+        <a href="home.html" class="notif-item">Home</a>
+        <a href="logout.html" class="notif-item" style="color:red;">Logout</a>
       </div>
     </nav>
   </div>
 </header>
 
 <main class="container">
-  <section>
-      <h2>ADMIN</h2>
-    <h2>Users</h2>
+  <h2>Admin Panel</h2>
+
+  <div class="glass-card">
+    <h3>All Users</h3>
     <div id="users-list"></div>
-  </section>
-
-  <section>
-    <h2>Groups</h2>
-    <div id="groups-list"></div>
-  </section>
+  </div>
 </main>
-
 
 <footer>
   <div class="footer-nav">
-    <div class="nav-item">🏠<span>Home</span></div>
-    <div class="nav-item">🔍<span>Search</span></div>
-    <div class="nav-item active">➕</div>
-    <div class="nav-item">💬<span>Chat</span></div>
-    <div class="nav-item">👤<span>Profile</span></div>
+    <div class="nav-item">👮<span>Admin</span></div>
   </div>
 </footer>
 
 <script>
-  function toggleMenu() {
-    const dropdown = document.getElementById('main-dropdown');
-    dropdown.classList.toggle('hidden');
-  }
-  
-  // Close dropdown if clicking outside
-  window.onclick = function(event) {
-    if (!event.target.matches('.menu-toggle')) {
-      const dropdown = document.getElementById('main-dropdown');
-      if (!dropdown.classList.contains('hidden')) {
-        dropdown.classList.add('hidden');
-      }
-    }
-  }
+function toggleMenu() {
+  document.getElementById("main-dropdown").classList.toggle("hidden");
+}
 </script>
 
-
-
-<script type="module" src="/js/logout.js"></script>
 <script type="module" src="/js/authGuard.js"></script>
 <script type="module" src="/js/admin.js"></script>
 </body>
